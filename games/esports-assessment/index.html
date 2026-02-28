@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 电竞天赋测评中心</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', sans-serif; background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); min-height: 100vh; color: #fff; }
+        .header { background: rgba(0,0,0,0.5); padding: 15px 30px; display: flex; justify-content: space-between; border-bottom: 2px solid #ffd700; }
+        .header h1 { color: #ffd700; font-size: 1.5rem; }
+        .user-info span { color: #aaa; margin-left: 20px; }
+        .user-info .name { color: #00ff88; font-weight: bold; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        #start-screen { text-align: center; padding: 60px 20px; }
+        #start-screen h2 { font-size: 2.5rem; color: #ffd700; margin-bottom: 20px; }
+        .subtitle { color: #aaa; font-size: 1.2rem; margin-bottom: 40px; }
+        .input-group { max-width: 400px; margin: 0 auto 30px; }
+        .input-group label { display: block; text-align: left; margin-bottom: 8px; color: #00ff88; }
+        .input-group input { width: 100%; padding: 12px 20px; font-size: 1rem; border: 2px solid #333; border-radius: 10px; background: rgba(0,0,0,0.3); color: #fff; outline: none; }
+        .age-group { display: flex; gap: 10px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap; }
+        .age-btn { padding: 10px 25px; border: 2px solid #444; border-radius: 20px; background: rgba(0,0,0,0.3); color: #fff; cursor: pointer; }
+        .age-btn:hover, .age-btn.active { border-color: #ffd700; background: rgba(255,215,0,0.2); color: #ffd700; }
+        .start-btn { padding: 18px 60px; font-size: 1.3rem; background: linear-gradient(135deg, #ffd700, #ffaa00); color: #1a1a2e; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; transition: all 0.3s; }
+        .start-btn:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(255,215,0,0.6); }
+        .test-info { background: rgba(255,255,255,0.05); border-radius: 15px; padding: 25px; margin-top: 40px; text-align: left; }
+        .test-info h3 { color: #00ff88; margin-bottom: 15px; }
+        .test-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+        .test-item { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border-left: 3px solid #ffd700; }
+        .test-item h4 { color: #ffd700; margin-bottom: 8px; }
+        .test-item p { color: #aaa; font-size: 0.9rem; }
+        #test-area { display: none; }
+        .test-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 15px 20px; background: rgba(0,0,0,0.3); border-radius: 10px; }
+        .test-progress { display: flex; gap: 10px; }
+        .progress-dot { width: 12px; height: 12px; border-radius: 50%; background: #333; border: 2px solid #555; }
+        .progress-dot.completed { background: #00ff88; border-color: #00ff88; }
+        .progress-dot.current { background: #ffd700; border-color: #ffd700; }
+        .timer { font-size: 1.5rem; color: #ff6b6b; font-weight: bold; }
+        .timer.warning { animation: blink 0.5s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
+        #gameCanvas { width: 100%; height: 400px; background: rgba(0,0,0,0.5); border-radius: 15px; border: 2px solid #333; display: block; }
+        .instruction { text-align: center; padding: 20px; background: rgba(255,215,0,0.1); border-radius: 10px; margin: 20px 0; }
+        .instruction h3 { color: #ffd700; }
+        .instruction p { color: #ccc; }
+        #results-area { display: none; }
+        .results-header { text-align: center; padding: 30px; }
+        .results-header h2 { font-size: 2rem; color: #ffd700; margin-bottom: 10px; }
+        .overall-score { display: flex; justify-content: center; align-items: center; gap: 30px; margin: 30px 0; flex-wrap: wrap; }
+        .score-circle { width: 180px; height: 180px; border-radius: 50%; background: conic-gradient(#00ff88 0%, #333 0%); display: flex; align-items: center; justify-content: center; position: relative; }
+        .score-circle::before { content: ''; position: absolute; width: 140px; height: 140px; background: #1a1a2e; border-radius: 50%; }
+        .score-circle .score { position: relative; z-index: 1; text-align: center; }
+        .score-circle .score .num { font-size: 3rem; font-weight: bold; color: #ffd700; }
+        .score-circle .score .label { font-size: 0.9rem; color: #aaa; }
+        .rank-badge { padding: 15px 30px; background: linear-gradient(135deg, #ffd700, #ffaa00); color: #1a1a2e; border-radius: 30px; font-weight: bold; font-size: 1.2rem; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin: 30px 0; }
+        .stat-card { background: rgba(0,0,0,0.3); border-radius: 15px; padding: 20px; border: 1px solid #333; }
+        .stat-card h4 { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: #00ff88; }
+        .stat-card .score-bar { height: 10px; background: #333; border-radius: 5px; overflow: hidden; margin-bottom: 10px; }
+        .stat-card .score-fill { height: 100%; border-radius: 5px; transition: width 1s; }
+        .stat-card .score-value { display: flex; justify-content: space-between; color: #aaa; font-size: 0.9rem; }
+        .recommendation { background: rgba(0,255,136,0.1); border: 2px solid #00ff88; border-radius: 15px; padding: 25px; margin-top: 30px; }
+        .recommendation h3 { color: #00ff88; margin-bottom: 15px; }
+        .recommendation .games { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px; }
+        .game-tag { padding: 10px 20px; background: rgba(255,215,0,0.2); border: 1px solid #ffd700; border-radius: 20px; color: #ffd700; }
+        .action-buttons { display: flex; gap: 15px; justify-content: center; margin-top: 30px; flex-wrap: wrap; }
+        .action-btn { padding: 12px 30px; border: 2px solid #555; border-radius: 20px; background: rgba(0,0,0,0.3); color: #fff; cursor: pointer; transition: all 0.3s; }
+        .action-btn:hover { border-color: #ffd700; }
+        .action-btn.primary { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #1a1a2e; border: none; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @media (max-width: 768px) { .header { flex-direction: column; gap: 15px; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎮 电竞天赋测评中心</h1>
+        <div class="user-info"><span>测评人: <span class="name" id="displayName">-</span></span><span>年龄组: <span id="displayAge">-</span></span></div>
+    </div>
+    <div class="container">
+        <div id="start-screen" class="fade-in">
+            <h2>⚡ 专业电竞天赋评估</h2>
+            <p class="subtitle">科学测评 · 精准定位 · 助力成长</p>
+            <div class="input-group"><label>📛 姓名/昵称</label><input type="text" id="userName" placeholder="请输入姓名或昵称" maxlength="20"></div>
+            <div class="age-group">
+                <button class="age-btn active" data-age="child">6-12岁</button>
+                <button class="age-btn" data-age="teen">13-16岁</button>
+                <button class="age-btn" data-age="adult">17岁+</button>
+            </div>
+            <button class="start-btn" onclick="startAssessment()">🚀 开始测评</button>
+            <div class="test-info">
+                <h3>📋 测评项目（共8项，每项60秒）</h3>
+                <div class="test-list">
+                    <div class="test-item"><h4>⚡ 反应速度</h4><p>测试对视觉刺激的最快反应时间</p></div>
+                    <div class="test-item"><h4>🎯 精准度</h4><p>测试点击和操作的精确程度</p></div>
+                    <div class="test-item"><h4>🧠 记忆力</h4><p>测试快速记忆和回忆能力</p></div>
+                    <div class="test-item"><h4>👁️ 空间感知</h4><p>测试3D空间定位和导航能力</p></div>
+                    <div class="test-item"><h4>🔄 手眼协调</h4><p>测试眼手配合的协调程度</p></div>
+                    <div class="test-item"><h4>📊 多任务处理</h4><p>测试同时处理多个任务的能力</p></div>
+                    <div class="test-item"><h4>🧩 策略思维</h4><p>测试快速决策和策略规划</p></div>
+                    <div class="test-item"><h4>⏱️ 专注力</h4><p>测试长时间专注的能力</p></div>
+                </div>
+            </div>
+        </div>
+        <div id="test-area">
+            <div class="test-header">
+                <div class="test-progress" id="testProgress"><div class="progress-dot completed"></div><div class="progress-dot completed"></div><div class="progress-dot completed"></div><div class="progress-dot completed"></div><div class="progress-dot completed"></div><div class="progress-dot completed"></div><div class="progress-dot completed"></div><div class="progress-dot current"></div></div>
+                <div><span id="testName" style="color:#ffd700;font-weight:bold;">测试</span><span style="margin-left:20px;">剩余: <span class="timer" id="timer">60</span>s</span></div>
+            </div>
+            <canvas id="gameCanvas" width="1100" height="400"></canvas>
+            <div class="instruction" id="instruction"><h3>测试说明</h3><p>准备开始</p></div>
+        </div>
+        <div id="results-area">
+            <div class="results-header fade-in">
+                <h2>📊 测评报告</h2>
+                <p>测评人: <span id="resultName" style="color:#00ff88;"></span> | 日期: <span id="resultDate"></span></p>
+                <div class="overall-score">
+                    <div class="score-circle" id="scoreCircle"><div class="score"><div class="num" id="totalScore">0</div><div class="label">综合得分</div></div></div>
+                    <div class="rank-badge" id="rankBadge">待评估</div>
+                </div>
+            </div>
+            <div class="stats-grid" id="statsGrid"></div>
+            <div class="recommendation"><h3>🎮 推荐发展方向</h3><p id="recommendationText"></p><div class="games" id="gameTags"></div></div>
+            <div class="action-buttons">
+                <button class="action-btn" onclick="exportPDF()">📄 导出报告</button>
+                <button class="action-btn" onclick="shareResult()">📤 分享结果</button>
+                <button class="action-btn primary" onclick="restartAssessment()">🔄 重新测评</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let currentUser = {name:'', ageGroup:'child'};
+        let currentTest = 0, timeLeft = 60, timerInterval = null, testResults = [];
+        const tests = [
+            {id:'reaction',name:'反应速度',icon:'⚡',color:'#00ff88'},
+            {id:'accuracy',name:'精准度',icon:'🎯',color:'#ff6b6b'},
+            {id:'memory',name:'记忆力',icon:'🧠',color:'#ffd700'},
+            {id:'spatial',name:'空间感知',icon:'👁️',color:'#44aaff'},
+            {id:'coordination',name:'手眼协调',icon:'🔄',color:'#ff6b35'},
+            {id:'multitask',name:'多任务处理',icon:'📊',color:'#9932cc'},
+            {id:'strategy',name:'策略思维',icon:'🧩',color:'#00ccff'},
+            {id:'focus',name:'专注力',icon:'⏱️',color:'#ff44aa'}
+        ];
+        const testDescriptions = {
+            reaction:{title:'⚡ 反应速度测试',desc:'当屏幕变绿时快速点击，测试反应时间'},
+            accuracy:{title:'🎯 精准度测试',desc:'点击移动的方块，尽可能多地点击中目标'},
+            memory:{title:'🧠 记忆力测试',desc:'记住随机显示的数字顺序'},
+            spatial:{title:'👁️ 空间感知测试',desc:'在迷宫中找到正确的路径'},
+            coordination:{title:'🔄 手眼协调测试',desc:'跟随移动的目标进行点击'},
+            multitask:{title:'📊 多任务处理测试',desc:'同时关注多个目标并做出反应'},
+            strategy:{title:'🧩 策略思维测试',desc:'在有限时间内做出最优决策'},
+            focus:{title:'⏱️ 专注力测试',desc:'保持专注，点击出现的目标'}
+        };
+        let canvas, ctx, gameState = {};
+        document.querySelectorAll('.age-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.age-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentUser.ageGroup = btn.dataset.age;
+            });
+        });
+        function startAssessment() {
+            const name = document.getElementById('userName').value.trim();
+            if (!name) {alert('请输入姓名或昵称！');return;}
+            currentUser.name = name;
+            document.getElementById('displayName').textContent = name;
+            const ageLabels = {child:'6-12岁',teen:'13-16岁',adult:'17岁+'};
+            document.getElementById('displayAge').textContent = ageLabels[currentUser.ageGroup];
+            currentTest = 0; testResults = [];
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('test-area').style.display = 'block';
+            document.getElementById('results-area').style.display = 'none';
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth || 1100;
+            canvas.height = 400;
+            canvas.addEventListener('click', handleClick);
+            startTest();
+        }
+        function startTest() {
+            const test = tests[currentTest];
+            timeLeft = 60;
+            gameState = {running:true,score:0,hits:0,clicks:0,reactionTimes:[],waiting:false,targets:[],sequence:[],playerSequence:[],playerPos:{x:0,y:0},targetPos:{x:4,y:4},wrongMoves:0,movingTarget:{x:100,y:200,vx:3,vy:2,size:30},options:[],choices:[],round:0,maxRounds:8,smallTarget:{x:canvas.width/2,y:canvas.height/2,size:15},missed:0,total:0};
+            document.getElementById('testName').textContent = test.name;
+            updateProgress();
+            const desc = testDescriptions[test.id];
+            document.getElementById('instruction').innerHTML = `<h3>${desc.title}</h3><p>${desc.desc}</p>`;
+            initTestGame();
+            startTimer();
+            gameLoop();
+        }
+        function initTestGame() {
+            switch(tests[currentTest].id) {
+                case 'reaction': 
+                    gameState.waiting = true; 
+                    gameState.reactionStart = Date.now();
+                    // 随机1-3秒后变绿
+                    if (gameState.greenTimer) clearTimeout(gameState.greenTimer);
+                    gameState.greenTimer = setTimeout(() => {
+                        if (gameState.running && gameState.waiting) {
+                            gameState.waiting = false;
+                        }
+                    }, 1000 + Math.random() * 2000);
+                    break;
+                case 'accuracy': spawnTargets(5); break;
+                case 'memory': gameState.sequence=[];gameState.playerSequence=[];for(let i=0;i<5;i++){const cell=Math.floor(Math.random()*9);if(!gameState.sequence.includes(cell))gameState.sequence.push(cell);}break;
+                case 'spatial': gameState.playerPos={x:0,y:0};gameState.targetPos={x:4,y:4};gameState.wrongMoves=0;break;
+                case 'multitask': gameState.mainTarget={x:canvas.width/2,y:canvas.height/2,size:40};break;
+                case 'strategy': gameState.options=[];gameState.choices=[];gameState.round=0;for(let i=0;i<4;i++){gameState.options.push({x:150+i*220,y:150,width:150,height:100,value:Math.floor(Math.random()*100),selected:false});}break;
+                case 'focus': gameState.smallTarget={x:canvas.width/2,y:canvas.height/2,size:15};gameState.missed=0;gameState.total=0;break;
+            }
+        }
+        function spawnTargets(count) {
+            gameState.targets = [];
+            for(let i=0;i<count;i++) {
+                gameState.targets.push({x:Math.random()*(canvas.width-100)+50,y:Math.random()*(canvas.height-100)+50,size:30+Math.random()*20,vx:(Math.random()-0.5)*4,vy:(Math.random()-0.5)*4});
+            }
+        }
+        function handleClick(e) {
+            if(!gameState.running) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const id = tests[currentTest].id;
+            if(id==='reaction' && gameState.waiting) {
+                const time = Date.now() - gameState.reactionStart;
+                if(time>100) {
+                    gameState.reactionTimes.push(time);
+                    gameState.hits++;
+                    gameState.waiting = false;
+                    // 1秒后重新变绿
+                    if (gameState.greenTimer) clearTimeout(gameState.greenTimer);
+                    gameState.greenTimer = setTimeout(() => {
+                        if (gameState.running) {
+                            gameState.waiting = true;
+                            gameState.reactionStart = Date.now();
+                        }
+                    }, 1000);
+                }
+            } else if(id==='accuracy') {
+                gameState.clicks++;
+                gameState.targets.forEach((t,i)=>{if(Math.hypot(x-t.x,y-t.y)<t.size){gameState.hits++;gameState.score+=Math.floor(t.size);gameState.targets.splice(i,1);spawnTargets(1);}});
+            } else if(id==='memory') {
+                const cell = Math.floor(x/(canvas.width/3));
+                const row = Math.floor(y/(canvas.height/3));
+                const cellIndex = row*3+cell;
+                if(gameState.sequence.includes(cellIndex) && !gameState.playerSequence.includes(cellIndex)) {gameState.playerSequence.push(cellIndex);gameState.score=gameState.playerSequence.length*20;}
+            } else if(id==='coordination') {
+                if(Math.hypot(x-gameState.movingTarget.x,y-gameState.movingTarget.y)<gameState.movingTarget.size) {gameState.hits++;gameState.score+=10;gameState.movingTarget.vx*=1.08;gameState.movingTarget.vy*=1.08;}
+            } else if(id==='multitask') {
+                if(Math.hypot(x-gameState.mainTarget.x,y-gameState.mainTarget.y)<gameState.mainTarget.size) {gameState.hits++;gameState.score+=5;}
+            } else if(id==='strategy') {
+                gameState.options.forEach((opt,i)=>{if(x>opt.x&&x<opt.x+opt.width&&y>opt.y&&y<opt.y+opt.height&&!opt.selected){opt.selected=true;gameState.score+=opt.value;gameState.choices.push(i);gameState.round++;if(gameState.round<gameState.maxRounds){setTimeout(()=>{gameState.options.forEach(o=>{o.value=Math.floor(Math.random()*100);o.selected=false;});},400);}}});
+            } else if(id==='focus') {
+                gameState.total++;
+                if(Math.hypot(x-gameState.smallTarget.x,y-gameState.smallTarget.y)<gameState.smallTarget.size) {gameState.hits++;gameState.score+=15;} else {gameState.missed++;}
+                gameState.smallTarget.x=Math.random()*(canvas.width-60)+30;
+                gameState.smallTarget.y=Math.random()*(canvas.height-60)+30;
+            } else if(id==='spatial') {
+                const cellSize = 60;
+                const col = Math.floor((x - (canvas.width-300)/2)/cellSize);
+                const row = Math.floor((y - 50)/cellSize);
+                if(col>=0&&col<5&&row>=0&&row<5) {
+                    if((col===gameState.playerPos.x+1 && row===gameState.playerPos.y) || (col===gameState.playerPos.x-1 && row===gameState.playerPos.y) || (col===gameState.playerPos.x && row===gameState.playerPos.y+1) || (col===gameState.playerPos.x && row===gameState.playerPos.y-1)) {
+                        gameState.playerPos={x:col,y:row};
+                        if(col===gameState.targetPos.x && row===gameState.targetPos.y) {gameState.score+=100;}
+                    } else if(!(col===gameState.targetPos.x && row===gameState.targetPos.y)) {gameState.wrongMoves++;}
+                }
+            }
+        }
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval=setInterval(()=>{timeLeft--;document.getElementById('timer').textContent=timeLeft;if(timeLeft<=10)document.getElementById('timer').classList.add('warning');if(timeLeft<=0)endTest();},1000);
+        }
+        function updateProgress() {
+            const dots=document.querySelectorAll('.progress-dot');
+            dots.forEach((dot,i)=>{dot.classList.remove('completed','current');if(i<currentTest)dot.classList.add('completed');else if(i===currentTest)dot.classList.add('current');});
+        }
+        function endTest() {
+            clearInterval(timerInterval);
+            gameState.running=false;
+            let score=0,percentile=50;
+            const id=tests[currentTest].id;
+            if(id==='reaction' && gameState.reactionTimes.length>0) {
+                // 根据平均反应时间计算分数（更宽容的评分）
+                const avg=gameState.reactionTimes.reduce((a,b)=>a+b,0)/gameState.reactionTimes.length;
+                // 300ms=100分, 400ms=80分, 500ms=60分, 600ms=40分, 700ms=20分, 800ms+=0分
+                score = Math.max(0, Math.min(100, 100 - (avg - 300) * 0.6));
+                percentile=avg<300?98:avg<350?90:avg<400?80:avg<450?70:avg<500?60:avg<550?50:avg<600?40:avg<700?30:avg<800?20:10;
+            } else if(id==='accuracy') {
+                const acc=gameState.clicks>0?gameState.hits/gameState.clicks*100:0;
+                score=Math.min(100,acc*0.5+gameState.hits*1.5);
+                percentile=gameState.hits>40?95:gameState.hits>30?80:gameState.hits>20?60:gameState.hits>10?40:20;
+            } else if(id==='memory') {
+                score=Math.min(100,gameState.playerSequence.length*20);
+                percentile=gameState.playerSequence.length>=5?95:gameState.playerSequence.length>=4?80:gameState.playerSequence.length>=3?60:40;
+            } else if(id==='coordination') {
+                score=Math.min(100,gameState.hits*2);
+                percentile=gameState.hits>35?95:gameState.hits>25?80:gameState.hits>15?60:gameState.hits>8?40:20;
+            } else if(id==='multitask') {
+                score=Math.min(100,gameState.score);
+                percentile=gameState.score>80?95:gameState.score>60?80:gameState.score>40?60:gameState.score>20?40:20;
+            } else if(id==='strategy') {
+                score=Math.min(100,gameState.score);
+                percentile=gameState.score>600?95:gameState.score>450?80:gameState.score>300?60:gameState.score>150?40:20;
+            } else if(id==='focus') {
+                const acc=gameState.total>0?gameState.hits/gameState.total*100:0;
+                score=Math.min(100,acc*0.8+gameState.hits*0.2);
+                percentile=acc>90?95:acc>80?80:acc>70?60:acc>60?40:20;
+            } else if(id==='spatial') {
+                score=Math.min(100,80-gameState.wrongMoves*10);
+                percentile=gameState.wrongMoves<2?95:gameState.wrongMoves<5?80:gameState.wrongMoves<8?60:gameState.wrongMoves<12?40:20;
+            }
+            testResults.push({id,name:tests[currentTest].name,score:Math.round(score),percentile,icon:tests[currentTest].icon,color:tests[currentTest].color});
+            currentTest++;
+            if(currentTest<tests.length) {setTimeout(startTest,1500);} else {showResults();}
+        }
+        function gameLoop() {
+            if(!gameState.running) return;
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            const gradient=ctx.createLinearGradient(0,0,0,canvas.height);
+            gradient.addColorStop(0,'#1a1a2e');gradient.addColorStop(1,'#16213e');
+            ctx.fillStyle=gradient;ctx.fillRect(0,0,canvas.width,canvas.height);
+            const id=tests[currentTest].id;
+            if(id==='reaction') {
+                if(gameState.waiting) {
+                    ctx.fillStyle='#ff4444';
+                    ctx.fillRect(0,0,canvas.width,canvas.height);
+                    // 显示尝试次数
+                    ctx.fillStyle='#fff';ctx.font='bold 30px Arial';ctx.textAlign='center';
+                    ctx.fillText('准备...',canvas.width/2,canvas.height/2-30);
+                    ctx.font='20px Arial';
+                    ctx.fillText(`已完成: ${gameState.hits} 次`,canvas.width/2,canvas.height/2+10);
+                } else {
+                    ctx.fillStyle='#00ff88';
+                    ctx.fillRect(0,0,canvas.width,canvas.height);
+                    ctx.fillStyle='#fff';ctx.font='bold 40px Arial';ctx.textAlign='center';
+                    ctx.fillText('点击!!!',canvas.width/2,canvas.height/2);
+                }
+            } else if(id==='accuracy') {
+                gameState.targets.forEach(t=>{t.x+=t.vx;t.y+=t.vy;
+                    if(t.x<t.size||t.x>canvas.width-t.size)t.vx*=-1;
+                    if(t.y<t.size||t.y>canvas.height-t.size)t.vy*=-1;
+                    ctx.fillStyle='#ffd700';ctx.beginPath();ctx.arc(t.x,t.y,t.size,0,Math.PI*2);ctx.fill();
+                    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+                });
+            } else if(id==='memory') {
+                const cellW=canvas.width/3,cellH=canvas.height/3;
+                gameState.sequence.forEach(cell=>{const col=cell%3,row=Math.floor(cell/3);ctx.fillStyle='#ffd700';ctx.fillRect(col*cellW+10,row*cellH+10,cellW-20,cellH-20);});
+            } else if(id==='coordination') {
+                const t=gameState.movingTarget;
+                t.x+=t.vx;t.y+=t.vy;
+                if(t.x<t.size||t.x>canvas.width-t.size)t.vx*=-1;
+                if(t.y<t.size||t.y>canvas.height-t.size)t.vy*=-1;
+                ctx.fillStyle='#00ff88';ctx.beginPath();ctx.arc(t.x,t.y,t.size,0,Math.PI*2);ctx.fill();
+                ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.stroke();
+            } else if(id==='multitask') {
+                const mt=gameState.mainTarget;
+                ctx.fillStyle='#ff6b6b';ctx.beginPath();ctx.arc(mt.x,mt.y,mt.size,0,Math.PI*2);ctx.fill();
+                ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.stroke();
+            } else if(id==='strategy') {
+                gameState.options.forEach(opt=>{ctx.fillStyle=opt.selected?'#333':'#2a2a4a';ctx.fillRect(opt.x,opt.y,opt.width,opt.height);ctx.strokeStyle=opt.selected?'#ffd700':'#555';ctx.lineWidth=2;ctx.strokeRect(opt.x,opt.y,opt.width,opt.height);ctx.fillStyle='#fff';ctx.font='bold 20px Arial';ctx.textAlign='center';ctx.fillText(opt.value+'分',opt.x+opt.width/2,opt.y+opt.height/2+8);});
+            } else if(id==='focus') {
+                const t=gameState.smallTarget;
+                ctx.fillStyle='#ff44aa';ctx.beginPath();ctx.arc(t.x,t.y,t.size,0,Math.PI*2);ctx.fill();
+                ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+            } else if(id==='spatial') {
+                const cellSize=60,offsetX=(canvas.width-5*cellSize)/2;
+                for(let y=0;y<5;y++){for(let x=0;x<5;x++){ctx.strokeStyle='#444';ctx.strokeRect(offsetX+x*cellSize,50+y*cellSize,cellSize,cellSize);}}
+                ctx.fillStyle='#00ff88';ctx.fillRect(offsetX+gameState.playerPos.x*cellSize,50+gameState.playerPos.y*cellSize,cellSize,cellSize);
+                ctx.fillStyle='#ff6b6b';ctx.fillRect(offsetX+gameState.targetPos.x*cellSize,50+gameState.targetPos.y*cellSize,cellSize,cellSize);
+            }
+            ctx.fillStyle='#fff';ctx.font='bold 20px Arial';ctx.textAlign='right';ctx.fillText('得分: '+gameState.score,canvas.width-20,30);
+            requestAnimationFrame(gameLoop);
+        }
+        function showResults() {
+            document.getElementById('test-area').style.display='none';document.getElementById('results-area').style.display='block';
+            const totalScore=Math.round(testResults.reduce((sum,r)=>sum+r.score,0)/testResults.length);
+            document.getElementById('resultName').textContent=currentUser.name;
+            document.getElementById('resultDate').textContent=new Date().toLocaleDateString('zh-CN');
+            document.getElementById('totalScore').textContent=totalScore;
+            const circle=document.getElementById('scoreCircle');circle.style.background=`conic-gradient(#ffd700 ${totalScore}%, #333 ${totalScore}%)`;
+            let rank='',rankColor='#ffd700';
+            if(totalScore>=85){rank='🌟 天赋异禀';}else if(totalScore>=70){rank='⭐ 潜力出众';rankColor='#00ff88';}else if(totalScore>=55){rank='👍 表现良好';rankColor='#44aaff';}else if(totalScore>=40){rank='📈 发展空间';rankColor='#ff6b35';}else{rank='💪 需加强训练';rankColor='#ff6b6b';}
+            const badge=document.getElementById('rankBadge');badge.textContent=rank;badge.style.background=`linear-gradient(135deg,${rankColor},${rankColor}88)`;
+            const grid=document.getElementById('statsGrid');grid.innerHTML='';
+            testResults.forEach(r=>{grid.innerHTML+=`<div class="stat-card"><h4 style="color:${r.color}">${r.icon} ${r.name}</h4><div class="score-bar"><div class="score-fill" style="width:${r.score}%;background:${r.color}"></div></div><div class="score-value"><span>得分: ${r.score}</span><span>超越${r.percentile}%用户</span></div></div>`;});
+            const strongTests=testResults.filter(r=>r.score>=70).map(r=>r.name);
+            let recText='';
+            if(strongTests.length>0) recText+=`你的${strongTests.join('、')}表现突出，适合需要这些能力的游戏。`;
+            document.getElementById('recommendationText').textContent=recText;
+            const games=[];const gt=document.getElementById('gameTags');
+            if(testResults.find(r=>r.id==='reaction'&&r.score>=60))games.push('🎮 FPS射击');if(testResults.find(r=>r.id==='accuracy'&&r.score>=60))games.push('🎯 音游/格斗');if(testResults.find(r=>r.id==='memory'&&r.score>=60))games.push('🧠 卡牌策略');if(testResults.find(r=>r.id==='spatial'&&r.score>=60))games.push('👁️ MOBA/赛车');if(testResults.find(r=>r.id==='multitask'&&r.score>=60))games.push('📊 即时战略');if(testResults.find(r=>r.id==='strategy'&&r.score>=60))games.push('🧩 策略战棋');if(testResults.find(r=>r.id==='focus'&&r.score>=60))games.push('⏱️ 持久战');if(games.length===0)games.push('🎮 建议多尝试各类游戏');
+            gt.innerHTML=games.map(g=>`<span class="game-tag">${g}</span>`).join('');
+        }
+        function exportPDF() {
+            let report=`电竞天赋测评报告
+测评人: ${currentUser.name}
+日期: ${new Date().toLocaleDateString('zh-CN')}
+年龄组: ${currentUser.ageGroup==='child'?'6-12岁':currentUser.ageGroup==='teen'?'13-16岁':'17岁+'}
+
+综合得分: ${document.getElementById('totalScore').textContent}
+评级: ${document.getElementById('rankBadge').textContent}
+
+各项目得分:
+`;
+            testResults.forEach(r=>{report+=`${r.icon} ${r.name}: ${r.score}分 (超越${r.percentile}%用户)\n`;});
+            report+=`
+建议: ${document.getElementById('recommendationText').textContent}
+
+---
+生成时间: ${new Date().toLocaleString()}
+`;
+            const blob=new Blob([report],{type:'text/plain;charset=utf-8'});
+            const a=document.createElement('a');
+            a.href=URL.createObjectURL(blob);
+            a.download=`电竞测评_${currentUser.name}_${new Date().toISOString().slice(0,10)}.txt`;
+            a.click();
+        }
+        function shareResult() {
+            const score=document.getElementById('totalScore').textContent;
+            const rank=document.getElementById('rankBadge').textContent;
+            const text=`⚡ 电竞天赋测评\n测评人: ${currentUser.name}\n综合得分: ${score}\n评级: ${rank}\n快来测试你的电竞天赋吧！`;
+            if(navigator.share){navigator.share({title:'电竞天赋测评',text});}else{navigator.clipboard.writeText(text);alert('结果已复制到剪贴板！');}
+        }
+        function restartAssessment() {location.reload();}
+    </script>
+</body>
+</html>

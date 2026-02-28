@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 剿匪行动 - 3D射击游戏</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; background: #000; font-family: 'Microsoft YaHei', sans-serif; }
+        #hud { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
+        #crosshair {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 30px; height: 30px; border: 2px solid rgba(255,255,255,0.8); border-radius: 50%; z-index: 101;
+        }
+        #crosshair::before, #crosshair::after {
+            content: ''; position: absolute; background: rgba(255,255,255,0.8);
+        }
+        #crosshair::before { width: 2px; height: 10px; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        #crosshair::after { width: 10px; height: 2px; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        
+        #health-bar, #boss-health-bar {
+            position: fixed; left: 50%; transform: translateX(-50%);
+            width: 300px; height: 25px; background: rgba(0,0,0,0.6);
+            border-radius: 12px; overflow: hidden; border: 2px solid #444;
+        }
+        #health-bar { bottom: 80px; }
+        #boss-health-bar { top: 80px; display: none; width: 400px; height: 35px; border-color: #ff4444; }
+        
+        #health-fill, #boss-health-fill { height: 100%; width: 100%; border-radius: 10px; transition: width 0.3s; }
+        #health-fill { background: linear-gradient(90deg, #ff4444, #44ff44); }
+        #boss-health-fill { background: linear-gradient(90deg, #8b0000, #ff0000); }
+        
+        #health-text, #boss-health-text {
+            position: absolute; width: 100%; text-align: center; line-height: 25px;
+            color: #fff; font-weight: bold; text-shadow: 0 0 5px #000;
+        }
+        #boss-health-text { line-height: 35px; font-size: 16px; }
+        
+        #weapon-display { position: fixed; bottom: 20px; right: 30px; color: #fff; font-size: 24px; text-shadow: 0 0 10px rgba(0,0,0,0.8); }
+        #ammo-display { position: fixed; bottom: 20px; left: 30px; color: #ffd700; font-size: 28px; font-weight: bold; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+        #wave-display { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); color: #ff6b35; font-size: 24px; font-weight: bold; text-shadow: 0 0 10px rgba(255,107,53,0.5); }
+        #score-display { position: fixed; top: 20px; right: 30px; color: #ffd700; font-size: 22px; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+        #damage-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, transparent 30%, rgba(255,0,0,0.3) 100%); opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+        
+        #start-screen, #game-over-screen, #win-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 50%, #1a0a0a 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200;
+        }
+        
+        #start-screen h1, #game-over-screen h1, #win-screen h1 {
+            font-size: 60px; color: #ff4444; text-shadow: 0 0 30px #ff0000, 0 0 60px #8b0000; margin-bottom: 20px; animation: glow 2s infinite;
+        }
+        @keyframes glow { 0%, 100% { text-shadow: 0 0 30px #ff0000, 0 0 60px #8b0000; } 50% { text-shadow: 0 0 50px #ff6600, 0 0 80px #ff3300; } }
+        
+        #start-screen p, #game-over-screen p, #win-screen p {
+            color: #aaa; font-size: 20px; margin-bottom: 40px; max-width: 600px; text-align: center; line-height: 1.8;
+        }
+        
+        .start-btn {
+            padding: 20px 60px; font-size: 26px; background: linear-gradient(135deg, #ff4444, #cc0000);
+            color: #fff; border: 3px solid #ff6666; border-radius: 15px; cursor: pointer; font-weight: bold;
+            transition: all 0.3s; text-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .start-btn:hover { transform: scale(1.1); box-shadow: 0 0 40px rgba(255,68,68,0.6); }
+        
+        #instructions { margin-top: 40px; color: #888; font-size: 16px; text-align: center; line-height: 2; }
+        #instructions span { color: #ffd700; font-weight: bold; }
+        
+        #boss-warning {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: #ff0000; font-size: 48px; font-weight: bold; text-shadow: 0 0 30px #ff0000;
+            opacity: 0; pointer-events: none; z-index: 150;
+        }
+        #reload-indicator { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); color: #ffaa00; font-size: 20px; opacity: 0; }
+    </style>
+</head>
+<body>
+    <div id="start-screen">
+        <h1>🎯 剿匪行动</h1>
+        <p>深入土匪巢穴，消灭所有敌人！穿越多个区域，击败土匪头目，最终剿灭匪首！</p>
+        <button class="start-btn" onclick="startGame()">🚀 开始行动</button>
+        <div id="instructions">
+            <span>WASD</span> 移动 | <span>鼠标</span> 瞄准 | <span>左键</span> 射击 | <span>R</span> 换弹 | <span>Q/E</span> 切换武器
+        </div>
+    </div>
+    
+    <div id="game-over-screen" style="display: none;">
+        <h1>💀 任务失败</h1>
+        <p id="game-over-message">你被土匪杀害了...</p>
+        <button class="start-btn" onclick="restartGame()">🔄 重新开始</button>
+    </div>
+    
+    <div id="win-screen" style="display: none;">
+        <h1>🎉 胜利！</h1>
+        <p id="win-message">恭喜！你成功剿灭了土匪窝！</p>
+        <p id="final-score" style="color: #ffd700; font-size: 28px; margin: 20px 0;"></p>
+        <button class="start-btn" onclick="restartGame()">🔄 再玩一次</button>
+    </div>
+    
+    <div id="hud">
+        <div id="crosshair"></div>
+        <div id="health-bar"><div id="health-fill"></div><div id="health-text">❤️ 100/100</div></div>
+        <div id="boss-health-bar"><div id="boss-health-fill"></div><div id="boss-health-text">土匪头目</div></div>
+        <div id="weapon-display">🔫 手枪</div>
+        <div id="ammo-display">12 / ∞</div>
+        <div id="wave-display">区域 1</div>
+        <div id="score-display">得分: 0</div>
+        <div id="reload-indicator">🔄 装弹中...</div>
+    </div>
+    <div id="damage-overlay"></div>
+    <div id="boss-warning">⚠️ BOSS出现！</div>
+    
+    <script type="importmap">
+        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+    </script>
+    
+    <script type="module">
+        import * as THREE from 'three';
+        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+        
+        let gameStarted = false, gameOver = false;
+        let health = 100, maxHealth = 100;
+        let score = 0, currentWave = 1, maxWaves = 5;
+        let bossActive = false, bossHealth = 500, maxBossHealth = 500;
+        
+        let currentWeapon = 0;
+        const weapons = [
+            { name: '🔫 手枪', damage: 25, fireRate: 300, ammo: 12, maxAmmo: 12, reloadTime: 1500, range: 100 },
+            { name: '🖊️ 冲锋枪', damage: 15, fireRate: 100, ammo: 30, maxAmmo: 30, reloadTime: 2000, range: 80 },
+            { name: '🎯 狙击枪', damage: 80, fireRate: 1200, ammo: 5, maxAmmo: 5, reloadTime: 3000, range: 200 }
+        ];
+        let currentAmmo = 12, isReloading = false, lastFireTime = 0;
+        
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a2e);
+        scene.fog = new THREE.Fog(0x1a1a2e, 20, 150);
+        
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+        
+        let audioCtx;
+        function initAudio() {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        function playSound(freq, duration, type = 'sine', volume = 0.2) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+        
+        function playShootSound() {
+            playSound(200 + Math.random() * 50, 0.1, 'square', 0.15);
+        }
+        function playHitSound() { playSound(80, 0.1, 'sawtooth', 0.1); }
+        function playReloadSound() {
+            playSound(400, 0.05, 'sine', 0.1);
+            setTimeout(() => playSound(500, 0.05, 'sine', 0.1), 100);
+            setTimeout(() => playSound(600, 0.1, 'sine', 0.15), 200);
+        }
+        
+        const ambientLight = new THREE.AmbientLight(0x333344, 0.4);
+        scene.add(ambientLight);
+        
+        const moonLight = new THREE.DirectionalLight(0xaaccff, 0.8);
+        moonLight.position.set(50, 100, 50);
+        moonLight.castShadow = true;
+        scene.add(moonLight);
+        
+        const flashLight = new THREE.SpotLight(0xffffee, 2, 50, Math.PI / 5, 0.3);
+        camera.add(flashLight);
+        flashLight.position.set(0, 0, 0);
+        const flashTarget = new THREE.Object3D();
+        flashTarget.position.set(0, 0, -1);
+        camera.add(flashTarget);
+        flashLight.target = flashTarget;
+        
+        const enemies = [];
+        const bullets = [];
+        const obstacles = [];
+        
+        const areas = [
+            { name: '🌲 森林入口', size: 60, enemies: 5 },
+            { name: '🏚️ 废弃营地', size: 80, enemies: 8 },
+            { name: '🏠 土匪据点', size: 100, enemies: 12 },
+            { name: '🏰 匪巢大厅', size: 120, enemies: 15 },
+            { name: '👿 匪首老巢', size: 150, enemies: 1, isBoss: true }
+        ];
+        
+        function createGround(size) {
+            const ground = new THREE.Mesh(new THREE.PlaneGeometry(size * 3, size * 3), new THREE.MeshStandardMaterial({ color: 0x2a2a1a, roughness: 0.9 }));
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+        }
+        
+        function createTree(x, z) {
+            const tree = new THREE.Group();
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 3, 8), new THREE.MeshStandardMaterial({ color: 0x4a3020 }));
+            trunk.position.y = 1.5; trunk.castShadow = true; tree.add(trunk);
+            const leaves = new THREE.Mesh(new THREE.ConeGeometry(2, 4, 8), new THREE.MeshStandardMaterial({ color: 0x1a4a1a }));
+            leaves.position.y = 5; leaves.castShadow = true; tree.add(leaves);
+            tree.position.set(x, 0, z); scene.add(tree);
+            obstacles.push({ x, z, radius: 1.5 });
+        }
+        
+        function createCrate(x, z, w = 2, h = 1.5, d = 2) {
+            const crate = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color: 0x5a4a3a, roughness: 0.7 }));
+            crate.position.set(x, h/2, z); crate.castShadow = true; scene.add(crate);
+            obstacles.push({ x, z, radius: Math.max(w, d) / 2 });
+        }
+        
+        function createWall(x, z, w, h = 4, d = 0.5) {
+            const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color: 0x4a3a2a, roughness: 0.8 }));
+            wall.position.set(x, h/2, z); wall.castShadow = true; scene.add(wall);
+            obstacles.push({ x, z, radius: w / 2 });
+        }
+        
+        function createBuilding(x, z, w, d) {
+            const h = 4;
+            createWall(x, z - d/2, w);
+            createWall(x - w/2, z, 0.5, h, d);
+            createWall(x + w/2, z, 0.5, h, d);
+            const roof = new THREE.Mesh(new THREE.ConeGeometry(Math.max(w, d) * 0.8, 2, 4), new THREE.MeshStandardMaterial({ color: 0x3a2a1a }));
+            roof.position.set(x, h + 1, z); roof.rotation.y = Math.PI / 4; scene.add(roof);
+        }
+        
+        function createEnemy(x, z, type = 'normal') {
+            const enemy = new THREE.Group();
+            let scale = 1, hp = 50, spd = 3, col = 0x884444;
+            
+            if (type === 'elite') { scale = 1.2; hp = 100; spd = 4; col = 0xaa5555; }
+            else if (type === 'boss') { scale = 2.5; hp = 500; spd = 2; col = 0xff2222; }
+            
+            const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.4 * scale, 1 * scale, 4, 8), new THREE.MeshStandardMaterial({ color: col }));
+            body.position.y = 0.7 * scale; body.castShadow = true; enemy.add(body);
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.3 * scale, 8, 8), new THREE.MeshStandardMaterial({ color: 0xddbb99 }));
+            head.position.y = 1.5 * scale; enemy.add(head);
+            const gun = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.5), new THREE.MeshStandardMaterial({ color: 0x333333 }));
+            gun.position.set(0.3 * scale, 0.9 * scale, -0.3 * scale); enemy.add(gun);
+            
+            enemy.position.set(x, 0, z); scene.add(enemy);
+            enemies.push({ group: enemy, type, health: hp, maxHealth: hp, speed: spd, lastShot: 0, fireRate: type === 'boss' ? 500 : 1000, active: true });
+        }
+        
+        function generateLevel(wave) {
+            const area = areas[wave - 1];
+            createGround(area.size);
+            
+            if (wave === 1) {
+                for (let i = 0; i < 20; i++) createTree(Math.random() * 40 - 20, Math.random() * 40 - 20);
+                for (let i = 0; i < 5; i++) createCrate(Math.random() * 30 - 15, Math.random() * 30 - 15);
+            } else if (wave === 2) {
+                createBuilding(10, -10, 8, 6); createBuilding(-15, 5, 6, 5);
+                for (let i = 0; i < 10; i++) createTree(Math.random() * 50 - 25, Math.random() * 50 - 25);
+            } else if (wave === 3) {
+                createBuilding(20, -20, 12, 8); createBuilding(-20, -10, 10, 6); createBuilding(0, 15, 8, 8);
+                createWall(-30, 0, 20); createWall(30, 0, 20);
+                for (let i = 0; i < 8; i++) createCrate(Math.random() * 40 - 20, Math.random() * 40 - 20, 2, 1.5, 2);
+            } else if (wave === 4) {
+                createBuilding(25, -25, 15, 10); createBuilding(-25, -25, 12, 8); createBuilding(0, -35, 20, 6); createBuilding(0, 20, 10, 10);
+                createCrate(15, 0, 1, 3, 1); createCrate(-15, 0, 1, 3, 1); createCrate(0, -10, 1, 3, 1);
+                for (let i = 0; i < 6; i++) createCrate(Math.random() * 35 - 17, Math.random() * 35 - 17, 2, 1.5, 2);
+            } else if (wave === 5) {
+                createBuilding(0, 0, 25, 15, false); createBuilding(-30, -30, 8, 8); createBuilding(30, -30, 8, 8);
+                const throne = new THREE.Mesh(new THREE.BoxGeometry(4, 2, 3), new THREE.MeshStandardMaterial({ color: 0x8b0000 }));
+                throne.position.set(0, 1, -5); throne.castShadow = true; scene.add(throne);
+                for (let x = -12; x <= 12; x += 6) {
+                    const torch = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1), new THREE.MeshStandardMaterial({ color: 0xff6600 }));
+                    torch.position.set(x, 2, 2); scene.add(torch);
+                    const light = new THREE.PointLight(0xff6600, 1, 10); light.position.set(x, 3, 2); scene.add(light);
+                }
+            }
+            
+            const numEnemies = area.isBoss ? 1 : area.enemies;
+            for (let i = 0; i < numEnemies; i++) {
+                const type = area.isBoss ? 'boss' : (Math.random() < 0.2 ? 'elite' : 'normal');
+                createEnemy(Math.random() * area.size - area.size/2, Math.random() * area.size - area.size/2, type);
+            }
+            updateWaveDisplay();
+        }
+        
+        const controls = new PointerLockControls(camera, document.body);
+        const playerVelocity = new THREE.Vector3();
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+        
+        const keys = {};
+        document.addEventListener('keydown', e => {
+            keys[e.code] = true;
+            if (e.code === 'KeyQ' && gameStarted && !gameOver) switchWeapon(-1);
+            else if (e.code === 'KeyE' && gameStarted && !gameOver) switchWeapon(1);
+            else if (e.code === 'KeyR' && gameStarted && !gameOver) reloadWeapon();
+        });
+        document.addEventListener('keyup', e => keys[e.code] = false);
+        
+        let isShooting = false;
+        document.addEventListener('mousedown', e => {
+            if (e.button === 0 && gameStarted && !gameOver && controls.isLocked) {
+                isShooting = true;
+                shoot();
+            }
+        });
+        document.addEventListener('mouseup', () => isShooting = false);
+        
+        window.startGame = function() {
+            document.getElementById('start-screen').style.display = 'none';
+            initAudio();
+            controls.lock();
+            gameStarted = true;
+            health = 100; score = 0; currentWave = 1; bossActive = false; bossHealth = 500;
+            currentWeapon = 0; currentAmmo = weapons[0].ammo; isReloading = false;
+            
+            enemies.forEach(e => scene.remove(e.group)); enemies.length = 0;
+            bullets.forEach(b => scene.remove(b.mesh)); bullets.length = 0;
+            obstacles.length = 0;
+            
+            camera.position.set(0, 1.7, 8);
+            generateLevel(currentWave);
+            updateHUD();
+        };
+        
+        window.restartGame = function() {
+            document.getElementById('game-over-screen').style.display = 'none';
+            document.getElementById('win-screen').style.display = 'none';
+            window.startGame();
+        };
+        
+        function switchWeapon(dir) {
+            if (isReloading) return;
+            currentWeapon = (currentWeapon + dir + weapons.length) % weapons.length;
+            currentAmmo = weapons[currentWeapon].ammo;
+            updateHUD();
+        }
+        
+        function reloadWeapon() {
+            if (isReloading || currentAmmo === weapons[currentWeapon].maxAmmo) return;
+            isReloading = true;
+            document.getElementById('reload-indicator').style.opacity = 1;
+            playReloadSound();
+            setTimeout(() => {
+                currentAmmo = weapons[currentWeapon].maxAmmo;
+                isReloading = false;
+                document.getElementById('reload-indicator').style.opacity = 0;
+                updateHUD();
+            }, weapons[currentWeapon].reloadTime);
+        }
+        
+        function shoot() {
+            const now = Date.now();
+            const weapon = weapons[currentWeapon];
+            
+            if (isReloading || now - lastFireTime < weapon.fireRate || currentAmmo <= 0) {
+                if (currentAmmo <= 0 && !isReloading) reloadWeapon();
+                return;
+            }
+            
+            currentAmmo--; lastFireTime = now;
+            playShootSound();
+            
+            const bullet = new THREE.Mesh(new THREE.SphereGeometry(0.05), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
+            const direction = new THREE.Vector3();
+            camera.getWorldDirection(direction);
+            bullet.position.copy(camera.position);
+            scene.add(bullet);
+            bullets.push({ mesh: bullet, direction: direction.normalize(), speed: 150, damage: weapon.damage, range: weapon.range, distance: 0 });
+            
+            camera.rotation.x += 0.02;
+            updateHUD();
+        }
+        
+        function updateBullets(delta) {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                b.mesh.position.addScaledVector(b.direction, b.speed * delta);
+                b.distance += b.speed * delta;
+                
+                let hit = false;
+                obstacles.forEach(obs => {
+                    if (Math.hypot(b.mesh.position.x - obs.x, b.mesh.position.z - obs.z) < obs.radius) hit = true;
+                });
+                
+                enemies.forEach(en => {
+                    if (!en.active) return;
+                    if (Math.hypot(b.mesh.position.x - en.group.position.x, b.mesh.position.z - en.group.position.z) < 1.5) {
+                        hit = true; en.health -= b.damage; playHitSound();
+                        if (en.health <= 0) {
+                            en.active = false; scene.remove(en.group);
+                            score += en.type === 'boss' ? 1000 : (en.type === 'elite' ? 200 : 100);
+                            if (en.type === 'boss') {
+                                bossActive = false;
+                                showWinScreen();
+                            } else checkWaveComplete();
+                        }
+                    }
+                });
+                
+                if (hit || b.distance > b.range) {
+                    scene.remove(b.mesh);
+                    bullets.splice(i, 1);
+                }
+            }
+        }
+        
+        function updateEnemies(delta) {
+            const playerPos = camera.position;
+            
+            enemies.forEach(en => {
+                if (!en.active) return;
+                
+                const toPlayer = new THREE.Vector3(playerPos.x - en.group.position.x, 0, playerPos.z - en.group.position.z);
+                const dist = toPlayer.length();
+                toPlayer.normalize();
+                
+                // 移动向玩家
+                if (dist > 8) {
+                    en.group.position.x += toPlayer.x * en.speed * delta;
+                    en.group.position.z += toPlayer.z * en.speed * delta;
+                }
+                
+                // 射击
+                const now = Date.now();
+                if (dist < 50 && now - en.lastShot > en.fireRate) {
+                    en.lastShot = now;
+                    const bullet = new THREE.Mesh(new THREE.SphereGeometry(0.05), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+                    bullet.position.copy(en.group.position);
+                    bullet.position.y = 1.5;
+                    scene.add(bullet);
+                    bullets.push({
+                        mesh: bullet, direction: toPlayer.clone().normalize(), speed: 80, damage: 10, range: 100, distance: 0, isEnemy: true
+                    });
+                }
+                
+                // 碰撞伤害
+                if (dist < 1.5) {
+                    health -= 20 * delta;
+                    document.getElementById('damage-overlay').style.opacity = 0.5;
+                    setTimeout(() => document.getElementById('damage-overlay').style.opacity = 0, 200);
+                    if (health <= 0) showGameOver();
+                }
+            });
+        }
+        
+        function checkCollision(x, z) {
+            for (const obs of obstacles) {
+                if (Math.hypot(x - obs.x, z - obs.z) < obs.radius + 0.5) return true;
+            }
+            return false;
+        }
+        
+        function updatePlayer(delta) {
+            if (!gameStarted || gameOver || !controls.isLocked) return;
+            
+            const speed = 8;
+            const velocity = new THREE.Vector3();
+            
+            if (keys['KeyW'] || keys['ArrowUp']) velocity.z -= 1;
+            if (keys['KeyS'] || keys['ArrowDown']) velocity.z += 1;
+            if (keys['KeyA'] || keys['ArrowLeft']) velocity.x -= 1;
+            if (keys['KeyD'] || keys['ArrowRight']) velocity.x += 1;
+            
+            velocity.normalize().multiplyScalar(speed * delta);
+            
+            const newX = camera.position.x + velocity.x;
+            const newZ = camera.position.z + velocity.z;
+            
+            if (!checkCollision(newX, camera.position.z)) camera.position.x = newX;
+            if (!checkCollision(camera.position.x, newZ)) camera.position.z = newZ;
+            
+            // 自动射击
+            if (isShooting) shoot();
+        }
+        
+        function checkWaveComplete() {
+            const alive = enemies.filter(e => e.active && e.type !== 'boss').length;
+            if (alive === 0) {
+                currentWave++;
+                if (currentWave > maxWaves) {
+                    showWinScreen();
+                } else {
+                    setTimeout(() => {
+                        generateLevel(currentWave);
+                        camera.position.set(0, 1.7, 8);
+                    }, 2000);
+                }
+            }
+        }
+        
+        function updateHUD() {
+            document.getElementById('health-fill').style.width = health + '%';
+            document.getElementById('health-text').textContent = `❤️ ${Math.round(health)}/${maxHealth}`;
+            document.getElementById('weapon-display').textContent = weapons[currentWeapon].name;
+            document.getElementById('ammo-display').textContent = `${currentAmmo} / ∞`;
+            document.getElementById('score-display').textContent = `得分: ${score}`;
+            
+            if (bossActive) {
+                document.getElementById('boss-health-bar').style.display = 'block';
+                document.getElementById('boss-health-fill').style.width = (bossHealth / maxBossHealth * 100) + '%';
+            }
+        }
+        
+        function updateWaveDisplay() {
+            document.getElementById('wave-display').textContent = areas[currentWave - 1].name;
+            if (areas[currentWave - 1].isBoss) {
+                bossActive = true;
+                document.getElementById('boss-health-bar').style.display = 'block';
+                const warning = document.getElementById('boss-warning');
+                warning.style.opacity = 1;
+                setTimeout(() => warning.style.opacity = 0, 3000);
+                playSound(80, 0.5, 'sawtooth', 0.3);
+            }
+        }
+        
+        function showGameOver() {
+            gameOver = true;
+            controls.unlock();
+            document.getElementById('game-over-screen').style.display = 'flex';
+        }
+        
+        function showWinScreen() {
+            gameOver = true;
+            controls.unlock();
+            document.getElementById('win-screen').style.display = 'flex';
+            document.getElementById('final-score').textContent = `最终得分: ${score}`;
+        }
+        
+        const clock = new THREE.Clock();
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            
+            updatePlayer(delta);
+            updateBullets(delta);
+            updateEnemies(delta);
+            
+            renderer.render(scene, camera);
+        }
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        animate();
+    </script>
+</body>
+</html>

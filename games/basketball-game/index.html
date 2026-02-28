@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏀 双人篮球投篮大赛 - 谁是投篮王？</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Arial', sans-serif;
+            padding: 15px;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            color: #ff6b35;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+            text-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .player-info {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 12px 20px;
+            border-radius: 15px;
+            min-width: 170px;
+            text-align: center;
+        }
+
+        .player-info.p1 {
+            border: 3px solid #00ff88;
+        }
+
+        .player-info.p2 {
+            border: 3px solid #ff6b6b;
+        }
+
+        .player-info h3 {
+            margin-bottom: 6px;
+            font-size: 1rem;
+        }
+
+        .player-info.p1 h3 {
+            color: #00ff88;
+        }
+
+        .player-info.p2 h3 {
+            color: #ff6b6b;
+        }
+
+        .player-info .score {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .player-info.p1 .score {
+            color: #00ff88;
+        }
+
+        .player-info.p2 .score {
+            color: #ff6b6b;
+        }
+
+        .player-info .stats {
+            font-size: 0.85rem;
+            color: #aaa;
+            margin-top: 5px;
+        }
+
+        .mode-info {
+            background: rgba(255, 107, 53, 0.2);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #ff6b35;
+            text-align: center;
+            min-width: 150px;
+        }
+
+        .mode-info h4 {
+            color: #ff6b35;
+            font-size: 0.9rem;
+        }
+
+        .mode-info .mode {
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .timer-info {
+            background: rgba(255, 215, 0, 0.2);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #ffd700;
+            text-align: center;
+            min-width: 100px;
+        }
+
+        .timer-info h4 {
+            color: #ffd700;
+            font-size: 0.9rem;
+        }
+
+        .timer-info .time {
+            color: #fff;
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
+        canvas {
+            border: 4px solid #ff6b35;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(255, 107, 53, 0.4);
+            background: linear-gradient(180deg, #1a1a3e 0%, #2a2a4e 100%);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .control-box {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 18px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .control-box h4 {
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .control-box.p1 h4 {
+            color: #00ff88;
+        }
+
+        .control-box.p2 h4 {
+            color: #ff6b6b;
+        }
+
+        .control-box p {
+            color: #aaa;
+            font-size: 0.8rem;
+        }
+
+        .buttons {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 10px 25px;
+            font-size: 0.95rem;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #ff6b35, #cc5500);
+            color: #fff;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.6);
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: #fff;
+        }
+
+        .reset-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+        }
+
+        .mode-btn {
+            background: linear-gradient(135deg, #ffd700, #ccaa00);
+            color: #1a1a2e;
+        }
+
+        .mode-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+        }
+
+        .winner-display {
+            margin-top: 12px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            min-height: 40px;
+        }
+
+        .winner-display.p1-wins {
+            color: #00ff88;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.7);
+        }
+
+        .winner-display.p2-wins {
+            color: #ff6b6b;
+            text-shadow: 0 0 20px rgba(255, 107, 107, 0.7);
+        }
+
+        .legend {
+            margin-top: 12px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            color: #aaa;
+            font-size: 0.8rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+
+        .instructions {
+            margin-top: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: #888;
+            font-size: 0.8rem;
+            max-width: 600px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏀 双人篮球投篮大赛 🏀</h1>
+    
+    <div class="game-header">
+        <div class="player-info p1">
+            <h3>🎮 玩家1 (绿色)</h3>
+            <div class="score" id="score1">0</div>
+            <div class="stats" id="stats1">投篮: 0 | 命中: 0</div>
+        </div>
+        
+        <div class="mode-info">
+            <h4>🎯 游戏模式</h4>
+            <div class="mode" id="gameMode">经典比赛</div>
+        </div>
+        
+        <div class="timer-info">
+            <h4>⏱️ 时间</h4>
+            <div class="time" id="gameTime">∞</div>
+        </div>
+        
+        <div class="player-info p2">
+            <h3>🎮 玩家2 (红色)</h3>
+            <div class="score" id="score2">0</div>
+            <div class="stats" id="stats2">投篮: 0 | 命中: 0</div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="controls">
+        <div class="control-box p1">
+            <h4>玩家1控制</h4>
+            <p>A/D 瞄准 | W/S 力度 | 空格 投篮</p>
+        </div>
+        <div class="control-box p2">
+            <h4>玩家2控制</h4>
+            <p>←/→ 瞄准 | ↑/↓ 力度 | Enter 投篮</p>
+        </div>
+    </div>
+
+    <div class="buttons">
+        <button class="start-btn" onclick="startGame()">🚀 开始比赛</button>
+        <button class="mode-btn" onclick="nextMode()">🔄 切换模式</button>
+        <button class="reset-btn" onclick="resetGame()">🔄 重新开始</button>
+    </div>
+
+    <div class="winner-display" id="winnerDisplay"></div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background: #ff6b35"></div>
+            <span>普通投篮 (+2分)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #ffd700"></div>
+            <span>三分线外 (+3分)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #44ff44"></div>
+            <span>空心球 (+1分奖励)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #ff44ff"></div>
+            <span>连续命中 (+2分奖励)</span>
+        </div>
+    </div>
+
+    <div class="instructions">
+        🎯 <strong>玩法说明:</strong> 按 A/D 或 ←/→ 调整瞄准角度，按 W/S 或 ↑/↓ 调整投篮力度，按空格或 Enter 投篮！
+        <br>💡 <strong>提示:</strong> 力度条满时是最大力度！连续命中会获得奖励分！
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = 900;
+        canvas.height = 550;
+
+        const MODES = [
+            { name: '经典比赛', targetScore: 50, timeLimit: null },
+            { name: '计时赛', targetScore: null, timeLimit: 60 },
+            { name: '三分大赛', targetScore: 30, timeLimit: 45, threeOnly: true },
+            { name: '技能挑战', targetScore: 40, timeLimit: 50, movingTarget: true }
+        ];
+        let currentModeIndex = 0;
+
+        let gameRunning = false;
+        let gameLoop = null;
+        let gameTime = 0;
+        let timeInterval = null;
+
+        let audioCtx = null;
+        let masterGain = null;
+
+        const particles = [];
+
+        const hoop = {
+            x: canvas.width - 80,
+            y: 200,
+            radius: 25,
+            rimRadius: 3,
+            backboardWidth: 10,
+            backboardHeight: 80
+        };
+
+        const player1 = {
+            x: 150,
+            y: 400,
+            radius: 25,
+            color: '#00ff88',
+            aimAngle: -45,
+            power: 15,
+            maxPower: 25,
+            shooting: false,
+            ball: null,
+            score: 0,
+            shots: 0,
+            hits: 0,
+            streak: 0,
+            lastShotTime: 0
+        };
+
+        const player2 = {
+            x: 250,
+            y: 400,
+            radius: 25,
+            color: '#ff6b6b',
+            aimAngle: -45,
+            power: 15,
+            maxPower: 25,
+            shooting: false,
+            ball: null,
+            score: 0,
+            shots: 0,
+            hits: 0,
+            streak: 0,
+            lastShotTime: 0
+        };
+
+        let hoopOffset = 0;
+        let hoopDirection = 1;
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.3;
+            masterGain.connect(audioCtx.destination);
+        }
+
+        function playShootSound() {
+            if (!audioCtx || !masterGain) return;
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+            
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            
+            osc.connect(gain);
+            gain.connect(masterGain);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.15);
+        }
+
+        function playScoreSound(isPlayer1, isThree, isStreak, isSwish) {
+            if (!audioCtx || !masterGain) return;
+            
+            let baseFreq = 523;
+            if (isThree) baseFreq = 659;
+            if (isSwish) baseFreq = 784;
+            if (isStreak) baseFreq = 880;
+            
+            const notes = [baseFreq, baseFreq * 1.25, baseFreq * 1.5];
+            
+            notes.forEach((freq, i) => {
+                setTimeout(() => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                    
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                    
+                    osc.connect(gain);
+                    gain.connect(masterGain);
+                    
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.2);
+                }, i * 80);
+            });
+        }
+
+        function playMissSound() {
+            if (!audioCtx || !masterGain) return;
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.2);
+            
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            
+            osc.connect(gain);
+            gain.connect(masterGain);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.2);
+        }
+
+        function playWinSound(isPlayer1) {
+            if (!audioCtx || !masterGain) return;
+            
+            const notes = isPlayer1 
+                ? [523, 659, 784, 1047, 784, 1047, 1318, 1568]
+                : [392, 494, 587, 784, 587, 784, 988, 1175];
+            
+            notes.forEach((freq, i) => {
+                setTimeout(() => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                    
+                    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                    
+                    osc.connect(gain);
+                    gain.connect(masterGain);
+                    
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.25);
+                }, i * 100);
+            });
+        }
+
+        function createParticles(x, y, color, count = 15) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 1,
+                    color: color,
+                    size: Math.random() * 4 + 2,
+                    decay: 0.02 + Math.random() * 0.02
+                });
+            }
+        }
+
+        function createConfetti(x, y) {
+            const colors = ['#ff6b35', '#ffd700', '#00ff88', '#ff6b6b', '#44aaff'];
+            for (let i = 0; i < 30; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 15,
+                    vy: (Math.random() - 1) * 12,
+                    life: 1,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    size: Math.random() * 6 + 3,
+                    decay: 0.008,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: (Math.random() - 0.5) * 0.3
+                });
+            }
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.3;
+                p.vx *= 0.98;
+                
+                if (p.rotation !== undefined) {
+                    p.rotation += p.rotationSpeed;
+                }
+                
+                p.life -= p.decay || 0.02;
+                
+                if (p.life <= 0 || p.y > canvas.height + 50) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        function drawParticles() {
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life;
+                
+                if (p.rotation !== undefined) {
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rotation);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size / 2);
+                    ctx.restore();
+                } else {
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function shoot(player) {
+            if (player.shooting || !gameRunning) return;
+            
+            player.shooting = true;
+            player.shots++;
+            
+            const angleRad = player.aimAngle * Math.PI / 180;
+            const power = player.power;
+            
+            player.ball = {
+                x: player.x,
+                y: player.y - player.radius,
+                vx: Math.cos(angleRad) * power,
+                vy: Math.sin(angleRad) * power,
+                radius: 12,
+                rotation: 0,
+                scored: false,
+                hitRim: false,
+                lastRim: null,
+                rebounds: 0
+            };
+            
+            playShootSound();
+            createParticles(player.x, player.y - player.radius, '#ff6b35', 5);
+        }
+
+        function updateBall(player, isPlayer1) {
+            if (!player.ball) return;
+            
+            const ball = player.ball;
+            ball.vy += 0.35;
+            ball.x += ball.vx;
+            ball.y += ball.vy;
+            ball.rotation += ball.vx * 0.1;
+            
+            const hoopCenter = { x: hoop.x, y: hoop.y };
+            const distToHoop = Math.hypot(ball.x - hoopCenter.x, ball.y - hoopCenter.y);
+            
+            if (!ball.scored && ball.vy > 0 && 
+                ball.y > hoop.y - 15 && ball.y < hoop.y + 15 &&
+                ball.x > hoop.x - hoop.radius + 5 && ball.x < hoop.x + hoop.radius - 5) {
+                
+                ball.scored = true;
+                
+                const isThree = player.x < canvas.width / 2 - 100;
+                const isThreeMode = MODES[currentModeIndex].threeOnly;
+                
+                let points = 2;
+                if (isThree || isThreeMode) points = 3;
+                
+                const isSwish = !ball.hitRim;
+                if (isSwish) points += 1;
+                
+                const timeSinceLast = Date.now() - player.lastShotTime;
+                const isStreak = timeSinceLast < 5000 && player.streak >= 2;
+                if (isStreak) points += 2;
+                
+                player.score += points;
+                player.hits++;
+                player.streak++;
+                player.lastShotTime = Date.now();
+                
+                if (isPlayer1) {
+                    document.getElementById('score1').textContent = player.score;
+                    document.getElementById('stats1').textContent = 
+                        `投篮: ${player.shots} | 命中: ${player.hits}`;
+                } else {
+                    document.getElementById('score2').textContent = player.score;
+                    document.getElementById('stats2').textContent = 
+                        `投篮: ${player.shots} | 命中: ${player.hits}`;
+                }
+                
+                playScoreSound(isPlayer1, isThree || isThreeMode, isStreak, isSwish);
+                createConfetti(hoop.x, hoop.y);
+                
+                checkWin(isPlayer1);
+            }
+            
+            const backboardX = hoop.x + hoop.radius;
+            if (ball.y > hoop.y - hoop.backboardHeight / 2 && 
+                ball.y < hoop.y + hoop.backboardHeight / 2) {
+                
+                const rimLeftDist = Math.abs(ball.x - (hoop.x - hoop.radius));
+                const rimRightDist = Math.abs(ball.x - (hoop.x + hoop.radius));
+                
+                if (rimLeftDist < ball.radius + hoop.rimRadius || 
+                    rimRightDist < ball.radius + hoop.rimRadius) {
+                    ball.hitRim = true;
+                    ball.vx *= -0.6;
+                    ball.vy *= -0.6;
+                    playMissSound();
+                    createParticles(ball.x, ball.y, '#ff6b35', 8);
+                }
+                
+                if (ball.x + ball.radius > backboardX && ball.vx > 0) {
+                    ball.x = backboardX - ball.radius;
+                    ball.vx *= -0.7;
+                    ball.hitRim = true;
+                }
+            }
+            
+            if (ball.y + ball.radius > canvas.height - 30) {
+                ball.y = canvas.height - 30 - ball.radius;
+                ball.vy *= -0.6;
+                ball.vx *= 0.8;
+                ball.rebounds++;
+                
+                if (ball.rebounds > 3) {
+                    player.shooting = false;
+                    player.ball = null;
+                    player.streak = 0;
+                }
+            }
+            
+            if (ball.x < -50 || ball.x > canvas.width + 50) {
+                player.shooting = false;
+                player.ball = null;
+                player.streak = 0;
+            }
+        }
+
+        function checkWin(isPlayer1) {
+            const mode = MODES[currentModeIndex];
+            const player = isPlayer1 ? player1 : player2;
+            
+            if (mode.targetScore && player.score >= mode.targetScore) {
+                endGame(isPlayer1);
+            }
+        }
+
+        function updateHoop() {
+            if (!MODES[currentModeIndex].movingTarget) return;
+            
+            hoopOffset += 0.5 * hoopDirection;
+            hoop.y = 200 + hoopOffset;
+            
+            if (hoopOffset > 80 || hoopOffset < -80) {
+                hoopDirection *= -1;
+            }
+        }
+
+        function drawCourt() {
+            ctx.fillStyle = '#2a2a4a';
+            ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
+            
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(hoop.x, hoop.y, 250, Math.PI * 0.6, Math.PI * 1.4);
+            ctx.stroke();
+            
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(hoop.x - 100, canvas.height - 30);
+            ctx.lineTo(hoop.x - 100, hoop.y);
+            ctx.stroke();
+            
+            ctx.strokeStyle = '#ff6b35';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(hoop.x - 60, hoop.y - 20, 120, 120);
+        }
+
+        function drawHoop() {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 8; i++) {
+                ctx.beginPath();
+                ctx.moveTo(hoop.x - hoop.radius + i * 6, hoop.y);
+                ctx.lineTo(hoop.x - hoop.radius / 2, hoop.y + 30);
+                ctx.stroke();
+            }
+            
+            ctx.strokeStyle = '#ff4400';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(hoop.x, hoop.y, hoop.radius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.fillRect(hoop.x + hoop.radius - 5, hoop.y - hoop.backboardHeight / 2, 8, hoop.backboardHeight);
+            
+            ctx.strokeStyle = '#ff6b35';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(hoop.x + hoop.radius - 5, hoop.y - hoop.backboardHeight / 2, 8, hoop.backboardHeight);
+        }
+
+        function drawBall(player) {
+            if (!player.ball) return;
+            
+            const ball = player.ball;
+            
+            ctx.save();
+            ctx.translate(ball.x, ball.y);
+            ctx.rotate(ball.rotation);
+            
+            ctx.fillStyle = '#ff6b35';
+            ctx.beginPath();
+            ctx.arc(0, 0, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.strokeStyle = '#cc4400';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(-ball.radius, 0);
+            ctx.lineTo(ball.radius, 0);
+            ctx.moveTo(0, -ball.radius);
+            ctx.lineTo(0, ball.radius);
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+
+        function drawPlayer(player, isPlayer1) {
+            ctx.shadowColor = player.color;
+            ctx.shadowBlur = 15;
+            
+            ctx.fillStyle = player.color;
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.shadowBlur = 0;
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(isPlayer1 ? 'P1' : 'P2', player.x, player.y + 6);
+            
+            if (!player.shooting && gameRunning) {
+                const angleRad = player.aimAngle * Math.PI / 180;
+                const lineLength = 60;
+                
+                ctx.strokeStyle = player.color;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(player.x, player.y - player.radius);
+                ctx.lineTo(
+                    player.x + Math.cos(angleRad) * lineLength,
+                    player.y - player.radius + Math.sin(angleRad) * lineLength
+                );
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                const powerPercent = (player.power / player.maxPower);
+                ctx.fillStyle = '#333';
+                ctx.fillRect(player.x - 30, player.y + 35, 60, 8);
+                
+                const gradient = ctx.createLinearGradient(player.x - 30, 0, player.x + 30, 0);
+                gradient.addColorStop(0, '#00ff00');
+                gradient.addColorStop(0.5, '#ffff00');
+                gradient.addColorStop(1, '#ff0000');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(player.x - 30, player.y + 35, 60 * powerPercent, 8);
+                
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(player.x - 30, player.y + 35, 60, 8);
+            }
+        }
+
+        function drawScore() {
+            if (!gameRunning) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 48px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('点击"开始比赛"开始游戏', canvas.width / 2, canvas.height / 2);
+            }
+        }
+
+        function update() {
+            updateHoop();
+            
+            if (player1.shooting) {
+                updateBall(player1, true);
+            }
+            
+            if (player2.shooting) {
+                updateBall(player2, false);
+            }
+            
+            updateParticles();
+            
+            draw();
+        }
+
+        function draw() {
+            ctx.fillStyle = '#1a1a3e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            drawCourt();
+            drawHoop();
+            drawParticles();
+            drawBall(player1);
+            drawBall(player2);
+            drawPlayer(player1, true);
+            drawPlayer(player2, false);
+            drawScore();
+        }
+
+        function startGame() {
+            if (!audioCtx) initAudio();
+            
+            if (gameRunning) return;
+            gameRunning = true;
+            
+            const mode = MODES[currentModeIndex];
+            
+            if (mode.timeLimit) {
+                gameTime = mode.timeLimit;
+                document.getElementById('gameTime').textContent = gameTime + 's';
+                
+                timeInterval = setInterval(() => {
+                    gameTime--;
+                    document.getElementById('gameTime').textContent = gameTime + 's';
+                    
+                    if (gameTime <= 0) {
+                        endGameByTime();
+                    }
+                }, 1000);
+            }
+            
+            if (gameLoop) clearInterval(gameLoop);
+            gameLoop = setInterval(update, 1000 / 60);
+        }
+
+        function endGameByTime() {
+            gameRunning = false;
+            if (timeInterval) clearInterval(timeInterval);
+            if (gameLoop) clearInterval(gameLoop);
+            
+            let winner = null;
+            if (player1.score > player2.score) {
+                winner = 'p1';
+            } else if (player2.score > player1.score) {
+                winner = 'p2';
+            }
+            
+            if (winner === 'p1') {
+                playWinSound(true);
+                winnerDisplay.textContent = `🎉 玩家1 获胜！${player1.score} vs ${player2.score}`;
+                winnerDisplay.className = 'winner-display p1-wins';
+                createConfetti(player1.x, player1.y);
+            } else if (winner === 'p2') {
+                playWinSound(false);
+                winnerDisplay.textContent = `🎉 玩家2 获胜！${player2.score} vs ${player1.score}`;
+                winnerDisplay.className = 'winner-display p2-wins';
+                createConfetti(player2.x, player2.y);
+            } else {
+                winnerDisplay.textContent = `🤝 平局！${player1.score} vs ${player2.score}`;
+                winnerDisplay.className = 'winner-display';
+                winnerDisplay.style.color = '#ffd700';
+            }
+        }
+
+        function endGame(winner) {
+            gameRunning = false;
+            if (timeInterval) clearInterval(timeInterval);
+            if (gameLoop) clearInterval(gameLoop);
+            
+            if (winner === 'p1') {
+                playWinSound(true);
+                winnerDisplay.textContent = `🎉 玩家1 获胜！${player1.score} vs ${player2.score}`;
+                winnerDisplay.className = 'winner-display p1-wins';
+                createConfetti(player1.x, player1.y);
+            } else {
+                playWinSound(false);
+                winnerDisplay.textContent = `🎉 玩家2 获胜！${player2.score} vs ${player1.score}`;
+                winnerDisplay.className = 'winner-display p2-wins';
+                createConfetti(player2.x, player2.y);
+            }
+        }
+
+        function nextMode() {
+            currentModeIndex = (currentModeIndex + 1) % MODES.length;
+            const mode = MODES[currentModeIndex];
+            document.getElementById('gameMode').textContent = mode.name;
+            document.getElementById('gameTime').textContent = mode.timeLimit ? mode.timeLimit + 's' : '∞';
+            resetGame();
+        }
+
+        function resetGame() {
+            gameRunning = false;
+            if (timeInterval) clearInterval(timeInterval);
+            if (gameLoop) clearInterval(gameLoop);
+            
+            player1.x = 150;
+            player1.y = 400;
+            player1.aimAngle = -45;
+            player1.power = 15;
+            player1.shooting = false;
+            player1.ball = null;
+            player1.score = 0;
+            player1.shots = 0;
+            player1.hits = 0;
+            player1.streak = 0;
+            
+            player2.x = 250;
+            player2.y = 400;
+            player2.aimAngle = -45;
+            player2.power = 15;
+            player2.shooting = false;
+            player2.ball = null;
+            player2.score = 0;
+            player2.shots = 0;
+            player2.hits = 0;
+            player2.streak = 0;
+            
+            particles.length = 0;
+            hoopOffset = 0;
+            
+            document.getElementById('score1').textContent = '0';
+            document.getElementById('score2').textContent = '0';
+            document.getElementById('stats1').textContent = '投篮: 0 | 命中: 0';
+            document.getElementById('stats2').textContent = '投篮: 0 | 命中: 0';
+            document.getElementById('winnerDisplay').textContent = '';
+            document.getElementById('winnerDisplay').className = 'winner-display';
+            
+            const mode = MODES[currentModeIndex];
+            document.getElementById('gameTime').textContent = mode.timeLimit ? mode.timeLimit + 's' : '∞';
+            
+            draw();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            // 玩家1: A/D 瞄准, W/S 力度, 空格投篮
+            if (e.code === 'KeyA') player1.aimAngle = Math.max(-80, player1.aimAngle - 3);
+            if (e.code === 'KeyD') player1.aimAngle = Math.min(-10, player1.aimAngle + 3);
+            if (e.code === 'KeyW') player1.power = Math.min(player1.maxPower, player1.power + 0.5);
+            if (e.code === 'KeyS') player1.power = Math.max(10, player1.power - 0.5);
+            if (e.code === 'Space') {
+                e.preventDefault();
+                shoot(player1);
+            }
+            
+            // 玩家2: 方向键瞄准, 上下力度, Enter投篮
+            if (e.code === 'ArrowLeft') player2.aimAngle = Math.max(-80, player2.aimAngle - 3);
+            if (e.code === 'ArrowRight') player2.aimAngle = Math.min(-10, player2.aimAngle + 3);
+            if (e.code === 'ArrowUp') player2.power = Math.min(player2.maxPower, player2.power + 0.5);
+            if (e.code === 'ArrowDown') player2.power = Math.max(10, player2.power - 0.5);
+            if (e.code === 'Enter') {
+                e.preventDefault();
+                shoot(player2);
+            }
+            
+            if (['Space', 'Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+                e.preventDefault();
+            }
+        });
+
+        // 初始化
+        resetGame();
+    </script>
+</body>
+</html>
+            if (e.code

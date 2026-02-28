@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pathfinder - 创业决策支持平台 | 免费试用</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: white;
+        }
+        
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+        }
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+            font-size: 0.9rem;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4);
+        }
+        .btn-success {
+            background: var(--secondary);
+            color: white;
+        }
+        .btn-success:hover {
+            background: #059669;
+        }
+        
+        /* Hero Section */
+        .hero {
+            padding: 8rem 2rem 5rem;
+            text-align: center;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdf4 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.03) 0%, transparent 50%);
+            animation: pulse 15s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .hero-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+        .hero h1 {
+            font-size: 3.2rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            color: var(--dark);
+        }
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-subtitle {
+            font-size: 1.2rem;
+            color: var(--gray);
+            max-width: 700px;
+            margin: 0 auto 2rem;
+        }
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 3rem;
+        }
+        .hero-actions .btn {
+            padding: 1rem 2rem;
+            font-size: 1rem;
+        }
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.85rem;
+        }
+        
+        /* Problem Section */
+        .problem {
+            padding: 5rem 2rem;
+            background: white;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-size: 2.2rem;
+            margin-bottom: 1rem;
+        }
+        .section-header p {
+            color: var(--gray);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        .problem-card {
+            padding: 1.5rem;
+            background: var(--light);
+            border-radius: 12px;
+            border-left: 4px solid var(--danger);
+            transition: all 0.3s;
+        }
+        .problem-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .problem-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .problem-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--danger);
+        }
+        .problem-card p {
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+        
+        /* Solution Section */
+        .solution {
+            padding: 5rem 2rem;
+            background: linear-gradient(135deg, var(--dark) 0%, #334155 100%);
+            color: white;
+        }
+        .solution .section-header h2 {
+            color: white;
+        }
+        .solution .section-header p {
+            color: #94a3b8;
+        }
+        .solution-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+        .solution-card {
+            padding: 2rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 16px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+        .solution-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.15);
+        }
+        .solution-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin: 0 auto 1rem;
+        }
+        .solution-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+        .solution-card p {
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
+        
+        /* Demo Preview */
+        .demo-preview {
+            padding: 5rem 2rem;
+            background: white;
+        }
+        .demo-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+        .demo-content h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+        .demo-content p {
+            color: var(--gray);
+            margin-bottom: 1.5rem;
+            font-size: 1.05rem;
+        }
+        .demo-features {
+            list-style: none;
+        }
+        .demo-features li {
+            padding: 0.75rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1rem;
+        }
+        .demo-features li::before {
+            content: '✓';
+            color: var(--secondary);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .demo-screenshot {
+            background: var(--light);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        .demo-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .demo-tab {
+            padding: 0.5rem 1rem;
+            background: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+        .demo-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+        .demo-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            min-height: 200px;
+        }
+        .insight-item {
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .insight-item:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+        .insight-tag {
+            display: inline-block;
+            padding: 0.2rem 0.4rem;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin-bottom: 0.3rem;
+        }
+        .insight-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+        .insight-meta {
+            font-size: 0.75rem;
+            color: var(--gray);
+        }
+        
+        /* Social Proof */
+        .social-proof {
+            padding: 5rem 2rem;
+            background: var(--light);
+        }
+        .proof-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .proof-card {
+            padding: 2rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        .proof-rating {
+            color: #f59e0b;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+        .proof-content {
+            font-style: italic;
+            color: var(--gray);
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+        }
+        .proof-author {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .proof-avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .proof-name {
+            font-weight: 600;
+        }
+        .proof-title {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+        
+        /* Pricing */
+        .pricing {
+            padding: 5rem 2rem;
+            background: white;
+        }
+        .pricing-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .pricing-card {
+            padding: 2rem;
+            background: var(--light);
+            border-radius: 16px;
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .pricing-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        .pricing-card.featured {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            transform: scale(1.03);
+        }
+        .pricing-card.featured:hover {
+            transform: scale(1.03) translateY(-5px);
+        }
+        .pricing-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--secondary);
+            color: white;
+            padding: 0.25rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .pricing-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .pricing-price {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        .pricing-period {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 1.5rem;
+        }
+        .pricing-features {
+            list-style: none;
+            text-align: left;
+            margin-bottom: 1.5rem;
+        }
+        .pricing-features li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .pricing-features li::before {
+            content: '✓';
+            color: var(--secondary);
+            font-weight: bold;
+        }
+        .pricing-card:not(.featured) .pricing-features li::before {
+            color: var(--primary);
+        }
+        
+        /* CTA Section */
+        .cta-section {
+            padding: 5rem 2rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            text-align: center;
+            color: white;
+        }
+        .cta-section h2 {
+            font-size: 2.2rem;
+            margin-bottom: 1rem;
+        }
+        .cta-section p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .cta-section .btn {
+            background: white;
+            color: var(--primary);
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+        }
+        .cta-section .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .cta-guarantee {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        /* Footer */
+        .footer {
+            padding: 3rem 2rem;
+            background: var(--dark);
+            color: white;
+            text-align: center;
+        }
+        .footer p {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+            .nav-links {
+                display: none;
+            }
+            .hero {
+                padding: 6rem 1rem 3rem;
+            }
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+            .hero-actions {
+                flex-direction: column;
+            }
+            .hero-stats {
+                flex-wrap: wrap;
+                gap: 2rem;
+            }
+            .demo-container {
+                grid-template-columns: 1fr;
+            }
+            .pricing-card.featured {
+                transform: none;
+            }
+        }
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate {
+            animation: fadeInUp 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <a href="#" class="logo">
+            <div class="logo-icon">🧭</div>
+            Pathfinder
+        </a>
+        <div class="header-actions">
+            <a href="#pricing" class="btn btn-outline">定价</a>
+            <a href="#demo" class="btn btn-primary">免费试用</a>
+        </div>
+    </header>
+    
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">🎯 创业决策支持平台 - 全新发布</div>
+            <h1>找到值得做的方向，<br><span>避免注定失败的错误</span></h1>
+            <p class="hero-subtitle">
+                从 1100+ 失败案例中学习，在实时灵感中发现机会。
+                Pathfinder 帮助你用数据驱动决策，提高创业成功率。
+            </p>
+            <div class="hero-actions">
+                <a href="#" class="btn btn-primary">🚀 免费开始使用</a>
+                <a href="#demo" class="btn btn-outline">查看演示</a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat">
+                    <div class="stat-number">1100+</div>
+                    <div class="stat-label">失败案例库</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">50K+</div>
+                    <div class="stat-label">活跃用户</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">90%</div>
+                    <div class="stat-label">失败可避免</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Problem Section -->
+    <section class="problem">
+        <div class="container">
+            <div class="section-header">
+                <h2>90% 的创业失败，本可以避免</h2>
+                <p>你是否正在经历这些困扰？</p>
+            </div>
+            <div class="problem-grid">
+                <div class="problem-card animate">
+                    <div class="problem-icon">😰</div>
+                    <h3>不知道做什么方向</h3>
+                    <p>市场机会太多，不知道哪些真正有潜力，浪费大量时间在错误的方向上</p>
+                </div>
+                <div class="problem-card animate">
+                    <div class="problem-icon">🤷</div>
+                    <h3>担心做出来没人要</h3>
+                    <p>没有数据支撑，不知道用户是否真的需要，投入大量精力后发现是伪需求</p>
+                </div>
+                <div class="problem-card animate">
+                    <div class="problem-icon">😔</div>
+                    <h3>重复别人的失败</h3>
+                    <p>很多错误前人已经犯过，但因为信息不透明，我们不得不再次踩坑</p>
+                </div>
+                <div class="problem-card animate">
+                    <div class="problem-icon">⏰</div>
+                    <h3>时间精力有限</h3>
+                    <p>作为创业者/副业者，时间宝贵，需要高效的决策支持工具</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Solution Section -->
+    <section class="solution">
+        <div class="container">
+            <div class="section-header">
+                <h2>Pathfinder - 你的创业决策助手</h2>
+                <p>唯一覆盖创业全流程的决策支持工具</p>
+            </div>
+            <div class="solution-grid">
+                <div class="solution-card animate">
+                    <div class="solution-icon">💡</div>
+                    <h3>灵感发现</h3>
+                    <p>每小时聚合 Reddit、Hacker News 等真实社区讨论，发现用户真实需求</p>
+                </div>
+                <div class="solution-card animate">
+                    <div class="solution-icon">⚠️</div>
+                    <h3>风险评估</h3>
+                    <p>基于 1100+ 失败案例，识别 7大致命错误，避免重蹈覆辙</p>
+                </div>
+                <div class="solution-card animate">
+                    <div class="solution-icon">🎯</div>
+                    <h3>综合评分</h3>
+                    <p>多维度评估市场机会，给出客观的可行性分数，让决策有据可依</p>
+                </div>
+                <div class="solution-card animate">
+                    <div class="solution-icon">🛡️</div>
+                    <h3>避免清单</h3>
+                    <p>针对你的具体项目，提供可操作的行动建议清单</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Demo Section -->
+    <section class="demo-preview" id="demo">
+        <div class="demo-container">
+            <div class="demo-content">
+                <h3>三大核心功能，一站式解决</h3>
+                <p>Pathfinder 将灵感发现与风险评估完美结合，让你的创业决策更科学</p>
+                <ul class="demo-features">
+                    <li><strong>灵感发现：</strong>实时聚合真实需求，发现下一个爆款机会</li>
+                    <li><strong>风险评估：</strong>深度分析失败案例，识别潜在风险信号</li>
+                    <li><strong>联合分析：</strong>灵感 × 风险 = 最佳行动路径</li>
+                    <li><strong>重建想法：</strong>用现代技术重新构建失败项目，发现新机会</li>
+                </ul>
+                <a href="#" class="btn btn-success" style="margin-top: 1rem;">立即体验所有功能 →</a>
+            </div>
+            <div class="demo-screenshot">
+                <div class="demo-tabs">
+                    <button class="demo-tab active" onclick="switchTab('inspiration')">灵感</button>
+                    <button class="demo-tab" onclick="switchTab('risk')">风险</button>
+                    <button class="demo-tab" onclick="switchTab('analysis')">分析</button>
+                </div>
+                <div class="demo-panel">
+                    <div id="demoContent">
+                        <div class="insight-item">
+                            <span class="insight-tag">🔥 AI</span>
+                            <div class="insight-title">AI 个人助手定制化工具</div>
+                            <div class="insight-meta">📈 热度上升 45% | 💬 1.2k 讨论</div>
+                        </div>
+                        <div class="insight-item">
+                            <span class="insight-tag">💼 SaaS</span>
+                            <div class="insight-title">中小型企业合规管理 SaaS</div>
+                            <div class="insight-meta">📈 热度上升 32% | 💬 856 讨论</div>
+                        </div>
+                        <div class="insight-item">
+                            <span class="insight-tag">🛒 电商</span>
+                            <div class="insight-title">利基市场垂直电商平台</div>
+                            <div class="insight-meta">📈 热度稳定 | 💬 543 讨论</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Social Proof -->
+    <section class="social-proof">
+        <div class="container">
+            <div class="section-header">
+                <h2>创业者们怎么说</h2>
+                <p>听听真实用户的声音</p>
+            </div>
+            <div class="proof-grid">
+                <div class="proof-card animate">
+                    <div class="proof-rating">⭐⭐⭐⭐⭐</div>
+                    <p class="proof-content">"Pathfinder 帮我避免了一个注定失败的项目。通过风险评估，我发现类似的产品已经有 5 家失败了。感谢 Pathfinder 救了我的时间和金钱！"</p>
+                    <div class="proof-author">
+                        <div class="proof-avatar">张</div>
+                        <div>
+                            <div class="proof-name">张明</div>
+                            <div class="proof-title">全栈开发者 · 副业创业者</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="proof-card animate">
+                    <div class="proof-rating">⭐⭐⭐⭐⭐</div>
+                    <p class="proof-content">"作为创业教育者，Pathfinder 的案例库是我的宝藏。1100+ 失败案例，让我的课程内容更加丰富和实用，学生们反馈非常好。"</p>
+                    <div class="proof-author">
+                        <div class="proof-avatar">王</div>
+                        <div>
+                            <div class="proof-name">王芳</div>
+                            <div class="proof-title">创业导师 · 教育者</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="proof-card animate">
+                    <div class="proof-rating">⭐⭐⭐⭐⭐</div>
+                    <p class="proof-content">"Loot Drop 的风险评估救了我的公司。现在用 Pathfinder 的联合分析功能，决策更加科学，团队信心更足，融资也更顺利了。"</p>
+                    <div class="proof-author">
+                        <div class="proof-avatar">李</div>
+                        <div>
+                            <div class="proof-name">李华</div>
+                            <div class="proof-title">连续创业者 · 产品经理</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Pricing Section -->
+    <section class="pricing" id="pricing">
+        <div class="container">
+            <div class="section-header">
+                <h2>简单透明的定价</h2>
+                <p>选择适合你的计划，快速开始</p>
+            </div>
+            <div class="pricing-cards">
+                <div class="pricing-card animate">
+                    <div class="pricing-name">免费版</div>
+                    <div class="pricing-price">¥0</div>
+                    <div class="pricing-period">永久免费</div>
+                    <ul class="pricing-features">
+                        <li>访问 100 个灵感</li>
+                        <li>基础搜索功能</li>
+                        <li>基础风险评估</li>
+                        <li>社区访问</li>
+                    </ul>
+                    <a href="#" class="btn btn-outline" style="width: 100%;">开始使用</a>
+                </div>
+                <div class="pricing-card featured animate">
+                    <div class="pricing-badge">最受欢迎</div>
+                    <div class="pricing-name">Pro 专业版</div>
+                    <div class="pricing-price">¥69</div>
+                    <div class="pricing-period">/月 或 ¥590/年</div>
+                    <ul class="pricing-features">
+                        <li>无限灵感访问</li>
+                        <li>1100+ 全部案例</li>
+                        <li>高级筛选搜索</li>
+                        <li>完整风险报告</li>
+                        <li>重建想法建议</li>
+                        <li>邮件每周精选</li>
+                    </ul>
+                    <a href="#" class="btn btn-success" style="width: 100%;">立即升级</a>
+                </div>
+                <div class="pricing-card animate">
+                    <div class="pricing-name">Team 团队版</div>
+                    <div class="pricing-price">¥199</div>
+                    <div class="pricing-period">/月</div>
+                    <ul class="pricing-features">
+                        <li>Pro 所有功能</li>
+                        <li>团队协作</li>
+                        <li>共享收藏夹</li>
+                        <li>API 访问</li>
+                        <li>专属支持</li>
+                    </ul>
+                    <a href="#" class="btn btn-outline" style="width: 100%;">联系我们</a>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <h2>准备好开始你的创业之旅了吗？</h2>
+        <p>加入 50,000+ 创业者，用数据驱动决策，提高成功率</p>
+        <a href="#" class="btn">🚀 免费注册，开始使用</a>
+        <div class="cta-guarantee">
+            ✅ 无需信用卡 | ✅ 3 分钟注册 | ✅ 立即使用所有功能
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <a href="#" class="logo" style="color: white; justify-content: center; margin-bottom: 1rem;">
+            <div class="logo-icon">🧭</div>
+            Pathfinder
+        </a>
+        <p>© 2026 Pathfinder. All rights reserved. Made with ❤️ for entrepreneurs.</p>
+    </footer>
+    
+    <script>
+        function switchTab(tab) {
+            document.querySelectorAll('.demo-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const content = document.getElementById('demoContent');
+            
+            if (tab === 'inspiration') {
+                content.innerHTML = `
+                    <div class="insight-item">
+                        <span class="insight-tag">🔥 AI</span>
+                        <div class="insight-title">AI 个人助手定制化工具</div>
+                        <div class="insight-meta">📈 热度上升 45% | 💬 1.2k 讨论</div>
+                    </div>
+                    <div class="insight-item">
+                        <span class="insight-tag">💼 SaaS</span>
+                        <div class="insight-title">中小型企业合规管理 SaaS</div>
+                        <div class="insight-meta">📈 热度上升 32% | 💬 856 讨论</div>
+                    </div>
+                    <div class="insight-item">
+                        <span class="insight-tag">🛒 电商</span>
+                        <div class="insight-title">利基市场垂直电商平台</div>
+                        <div class="insight-meta">📈 热度稳定 | 💬 543 讨论</div>
+                    </div>
+                `;
+            } else if (tab === 'risk') {
+                content.innerHTML = `
+                    <div class="insight-item" style="border-color: #ef4444;">
+                        <span class="insight-tag" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">💀 高风险</span>
+                        <div class="insight-title">AI 写作助手</div>
+                        <div class="insight-meta">❌ 失败原因: 市场饱和 | 🔍 相似案例: 23个</div>
+                    </div>
+                    <div class="insight-item" style="border-color: #f59e0b;">
+                        <span class="insight-tag" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">⚠️ 中风险</span>
+                        <div class="insight-title">社交电商平台</div>
+                        <div class="insight-meta">❌ 失败原因: 获客成本高 | 🔍 相似案例: 15个</div>
+                    </div>
+                    <div class="insight-item" style="border-color: #10b981;">
+                        <span class="insight-tag" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">✅ 可参考</span>
+                        <div class="insight-title">B2B SaaS 工具</div>
+                        <div class="insight-meta">💡 成功要素: 清晰的客户价值</div>
+                    </div>
+                `;
+            } else {
+                content.innerHTML = `
+                    <div style="text-align: center; padding: 2rem;">
+                        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🎯</div>
+                        <h3 style="margin-bottom: 0.5rem;">机会评分: 85/100</h3>
+                        <p style="color: #10b981; font-size: 0.9rem;">✅ 建议立即开始</p>
+                        <div style="margin-top: 1rem; padding: 1rem; background: #f0fdf4; border-radius: 8px;">
+                            <p style="font-size: 0.9rem; color: #065f46;">📋 建议行动：</p>
+                            <ul style="text-align: left; font-size: 0.85rem; color: #065f46; margin-top: 0.5rem; padding-left: 1rem;">
+                                <li>1. 深入调研目标用户需求</li>
+                                <li>2. 建立 MVP 验证核心假设</li>
+                                <li>3. 关注获客成本控制</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

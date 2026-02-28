@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pathfinder - 创业决策支持平台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: var(--light);
+        }
+        .navbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+        .logo-icon {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: var(--gray);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        .nav-links a:hover { color: var(--primary); }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        .btn-outline:hover { background: var(--primary); color: white; }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4);
+        }
+        .hero {
+            padding: 8rem 2rem 4rem;
+            text-align: center;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .hero-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--gray);
+            max-width: 700px;
+            margin: 0 auto 2rem;
+        }
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 3rem;
+        }
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .stat { text-align: center; }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .stat-label { color: var(--gray); font-size: 0.9rem; }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        .section-header h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        .section-header p {
+            color: var(--gray);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .value-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .value-card {
+            padding: 2rem;
+            background: var(--light);
+            border-radius: 16px;
+            transition: all 0.3s;
+        }
+        .value-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        .value-icon {
+            width: 60px; height: 60px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .value-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+        .value-card p {
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+        
+        .features {
+            padding: 6rem 2rem;
+            background: var(--light);
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .feature-item {
+            padding: 2rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        .feature-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--secondary);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        .feature-item h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .feature-list {
+            list-style: none;
+        }
+        .feature-list li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--gray);
+        }
+        .feature-list li::before {
+            content: "✓";
+            color: var(--secondary);
+            font-weight: bold;
+        }
+        
+        .demo {
+            padding: 6rem 2rem;
+            background: white;
+        }
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+        .demo-preview {
+            background: var(--light);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        .demo-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .demo-tab {
+            padding: 0.5rem 1rem;
+            background: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .demo-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+        .demo-content {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            min-height: 300px;
+        }
+        .demo-search {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .demo-search input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .insight-item {
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .insight-item:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+        .insight-tag {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        .insight-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        .insight-meta {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+        
+        .pricing {
+            padding: 6rem 2rem;
+            background: linear-gradient(135deg, var(--dark) 0%, #334155 100%);
+            color: white;
+        }
+        .pricing-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .pricing-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+        .pricing-card.featured {
+            background: var(--primary);
+            transform: scale(1.05);
+        }
+        .pricing-card:hover {
+            transform: translateY(-5px);
+        }
+        .pricing-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .pricing-price {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .pricing-period {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+        .pricing-features {
+            list-style: none;
+            margin: 2rem 0;
+            text-align: left;
+        }
+        .pricing-features li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #e2e8f0;
+        }
+        .pricing-features li::before {
+            content: "✓";
+            color: var(--secondary);
+        }
+        
+        .testimonials {
+            padding: 6rem 2rem;
+            background: white;
+        }
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .testimonial-card {
+            padding: 2rem;
+            background: var(--light);
+            border-radius: 16px;
+        }
+        .testimonial-content {
+            font-style: italic;
+            color: var(--gray);
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+        }
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .author-avatar {
+            width: 50px; height: 50px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .author-name { font-weight: 600; }
+        .author-title { font-size: 0.85rem; color: var(--gray); }
+        
+        .cta {
+            padding: 6rem 2rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            text-align: center;
+            color: white;
+        }
+        .cta h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        .cta p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .cta .btn {
+            background: white;
+            color: var(--primary);
+        }
+        .cta .btn:hover {
+            background: var(--light);
+            transform: translateY(-2px);
+        }
+        
+        .footer {
+            padding: 4rem 2rem 2rem;
+            background: var(--dark);
+            color: white;
+        }
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr repeat(3, 1fr);
+            gap: 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .footer-brand { max-width: 300px; }
+        .footer-brand .logo { color: white; margin-bottom: 1rem; }
+        .footer-brand p { color: #94a3b8; font-size: 0.95rem; }
+        .footer-column h4 {
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+        .footer-column ul { list-style: none; }
+        .footer-column li { margin-bottom: 0.75rem; }
+        .footer-column a {
+            color: #94a3b8;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .footer-column a:hover { color: white; }
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            margin-top: 3rem;
+            border-top: 1px solid #334155;
+            color: #64748b;
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate { animation: fadeInUp 0.6s ease-out; }
+        
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .hero-stats { flex-direction: column; gap: 2rem; }
+            .features-grid { grid-template-columns: 1fr; }
+            .demo-container { grid-template-columns: 1fr; }
+            .footer-grid { grid-template-columns: 1fr; }
+            .pricing-card.featured { transform: none; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="#" class="logo">
+            <div class="logo-icon">🧭</div>
+            Pathfinder
+        </a>
+        <ul class="nav-links">
+            <li><a href="#features">功能特性</a></li>
+            <li><a href="#demo">产品演示</a></li>
+            <li><a href="#pricing">定价方案</a></li>
+            <li><a href="#testimonials">用户评价</a></li>
+        </ul>
+        <div>
+            <a href="#" class="btn btn-outline" style="margin-right: 0.5rem;">登录</a>
+            <a href="#" class="btn btn-primary">免费开始</a>
+        </div>
+    </nav>
+    
+    <section class="hero">
+        <div class="hero-badge">🚀 创业决策支持平台 - 正式发布</div>
+        <h1>找到值得做的方向，<br><span>避免注定失败的错误</span></h1>
+        <p class="hero-subtitle">
+            从 1100+ 失败案例中学习，在实时灵感中发现机会。
+            Pathfinder 帮助你做出更明智的创业决策。
+        </p>
+        <div class="hero-actions">
+            <a href="#" class="btn btn-primary">免费试用 →</a>
+            <a href="#demo" class="btn btn-outline">观看演示</a>
+        </div>
+        <div class="hero-stats">
+            <div class="stat">
+                <div class="stat-number">1100+</div>
+                <div class="stat-label">失败案例库</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">50K+</div>
+                <div class="stat-label">活跃创业者</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">16.2x</div>
+                <div class="stat-label">投资回报率</div>
+            </div>
+        </div>
+    </section>
+    
+    <section style="padding: 6rem 2rem; background: white;">
+        <div class="section-header">
+            <h2>为什么选择 Pathfinder？</h2>
+            <p>唯一覆盖创业全流程的决策支持工具，从灵感到执行，一站式解决方案</p>
+        </div>
+        <div class="value-cards">
+            <div class="value-card animate">
+                <div class="value-icon">💡</div>
+                <h3>灵感发现</h3>
+                <p>聚合 Reddit、Hacker News、Product Hunt 等真实社区讨论，发现用户真实需求</p>
+            </div>
+            <div class="value-card animate">
+                <div class="value-icon">⚠️</div>
+                <h3>风险评估</h3>
+                <p>基于 1100+ 失败案例，识别潜在风险，避免重蹈覆辙</p>
+            </div>
+            <div class="value-card animate">
+                <div class="value-icon">🎯</div>
+                <h3>综合评分</h3>
+                <p>多维度评估市场机会，给出客观的可行性分数</p>
+            </div>
+            <div class="value-card animate">
+                <div class="value-icon">📊</div>
+                <h3>路径推荐</h3>
+                <p>结合灵感与风险数据，推荐最佳行动路径</p>
+            </div>
+            <div class="value-card animate">
+                <div class="value-icon">🛡️</div>
+                <h3>避免清单</h3>
+                <p>提供具体的行动建议清单，降低失败概率</p>
+            </div>
+            <div class="value-card animate">
+                <div class="value-icon">🤝</div>
+                <h3>社区支持</h3>
+                <p>与志同道合的创业者交流，分享经验与教训</p>
+            </div>
+        </div>
+    </section>
+    
+    <section class="features" id="features">
+        <div class="section-header">
+            <h2>完整功能覆盖</h2>
+            <p>结合 Neven.app 的灵感发现与 Loot Drop 的风险评估</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-item">
+                <span class="feature-badge">灵感发现模块</span>
+                <h3>Neven 核心功能</h3>
+                <ul class="feature-list">
+                    <li>实时灵感池聚合</li>
+                    <li>需求热度分析</li>
+                    <li>趋势追踪</li>
+                    <li>收藏管理</li>
+                    <li>高级搜索筛选</li>
+                </ul>
+            </div>
+            <div class="feature-item">
+                <span class="feature-badge">风险评估模块</span>
+                <h3>Loot Drop 核心功能</h3>
+                <ul class="feature-list">
+                    <li>1100+ 失败案例库</li>
+                    <li>深度死因分析</li>
+                    <li>7大致命错误评估</li>
+                    <li>行业对标对比</li>
+                    <li>重建想法建议</li>
+                </ul>
+            </div>
+            <div class="feature-item">
+                <span class="feature-badge" style="background: rgba(99, 102, 241, 0.1); color: var(--primary);">Pathfinder 独有</span>
+                <h3>联合分析功能</h3>
+                <ul class="feature-list">
+                    <li>灵感 × 风险 机会矩阵</li>
+                    <li>多维度综合评分</li>
+                    <li>个性化路径推荐</li>
+                    <li>执行监控仪表盘</li>
+                    <li>里程碑检查清单</li>
+                </ul>
+            </div>
+            <div class="feature-item">
+                <span class="feature-badge" style="background: rgba(99, 102, 241, 0.1); color: var(--primary);">社区模块</span>
+                <h3>用户互动功能</h3>
+                <ul class="feature-list">
+                    <li>灵感讨论区</li>
+                    <li>风险经验分享</li>
+                    <li>成功案例展示</li>
+                    <li>问答互助区</li>
+                    <li>专家 AMA</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+    
+    <section class="demo" id="demo">
+        <div class="section-header">
+            <h2>产品演示</h2>
+            <p>亲身体验 Pathfinder 的核心功能</p>
+        </div>
+        <div class="demo-container">
+            <div class="demo-preview">
+                <div class="demo-tabs">
+                    <button class="demo-tab active" onclick="switchTab('inspiration')">灵感发现</button>
+                    <button class="demo-tab" onclick="switchTab('risk')">风险评估</button>
+                    <button class="demo-tab" onclick="switchTab('analysis')">联合分析</button>
+                </div>
+                <div class="demo-content">
+                    <div class="demo-search">
+                        <input type="text" placeholder="搜索灵感、案例、话题..." id="searchInput">
+                        <button class="btn btn-primary" onclick="searchDemo()">搜索</button>
+                    </div>
+                    <div id="demoContent">
+                        <div class="insight-item">
+                            <span class="insight-tag">🔥 AI</span>
+                            <div class="insight-title">AI 个人助手定制化工具</div>
+                            <div class="insight-meta">📈 热度上升 45% | 💬 1.2k 讨论</div>
+                        </div>
+                        <div class="insight-item">
+                            <span class="insight-tag">💼 SaaS</span>
+                            <div class="insight-title">中小型企业合规管理 SaaS</div>
+                            <div class="insight-meta">📈 热度上升 32% | 💬 856 讨论</div>
+                        </div>
+                        <div class="insight-item">
+                            <span class="insight-tag">🛒 电商</span>
+                            <div class="insight-title">利基市场垂直电商平台</div>
+                            <div class="insight-meta">📈 热度稳定 | 💬 543 讨论</div>
+                        </div>
+                        <div class="insight-item">
+                            <span class="insight-tag">📱 工具</span>
+                            <div class="insight-title">开发者效率工具集合</div>
+                            <div class="insight-meta">📈 热度上升 28% | 💬 421 讨论</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h3>三大核心功能</h3>
+                <div style="margin-top: 2rem;">
+                    <div style="margin-bottom: 1.5rem;">
+                        <h4 style="margin-bottom: 0.5rem;">💡 灵感发现</h4>
+                        <p style="color: var(--gray);">每小时从 Reddit、Hacker News、Product Hunt 等社区聚合真实需求</p>
+                    </div>
+                    <div style="margin-bottom: 1.5rem;">
+                        <h4 style="margin-bottom: 0.5rem;">⚠️ 风险评估</h4>
+                        <p style="color: var(--gray);">基于 1100+ 失败案例，识别 7大致命错误</p>
+                    </div>
+                    <div style="margin-bottom: 1.5rem;">
+                        <h4 style="margin-bottom: 0.5rem;">🎯 联合分析</h4>
+                        <p style="color: var(--gray);">将灵感与风险数据结合，给出综合评分和最佳行动路径</p>
+                    </div>
+                </div>
+                <a href="#" class="btn btn-primary" style="margin-top: 1rem;">立即体验 →</a>
+            </div>
+        </div>
+    </section>
+    
+    <section class="pricing" id="pricing">
+        <div class="section-header">
+            <h2>简单透明的定价</h2>
+            <p>选择适合你的计划，开始创业决策之旅</p>
+        </div>
+        <div class="pricing-cards">
+            <div class="pricing-card">
+                <div class="pricing-name">免费版</div>
+                <div class="pricing-price">¥0</div>
+                <div class="pricing-period">永久免费</div>
+                <ul class="pricing-features">
+                    <li>访问 100 个灵感</li>
+                    <li>基础搜索功能</li>
+                    <li>基础风险评估</li>
+                    <li>社区访问</li>
+                </ul>
+                <a href="#" class="btn btn-outline" style="border-color: white; color: white; margin-top: 1rem;">开始使用</a>
+            </div>
+            <div class="pricing-card featured">
+                <div class="pricing-name">Pro 专业版</div>
+                <div class="pricing-price">¥69</div>
+                <div class="pricing-period">/月 或 ¥590/年</div>
+                <ul class="pricing-features">
+                    <li>无限灵感访问</li>
+                    <li>1100+ 全部案例</li>
+                    <li>高级筛选搜索</li>
+                    <li>完整风险报告</li>
+                    <li>重建想法建议</li>
+                    <li>邮件每周精选</li>
+                </ul>
+                <a href="#" class="btn btn-success" style="margin-top: 1rem;">立即升级</a>
+            </div>
+            <div class="pricing-card">
+                <div class="pricing-name">Team 团队版</div>
+                <div class="pricing-price">¥199</div>
+                <div class="pricing-period">/月</div>
+                <ul class="pricing-features">
+                    <li>Pro 所有功能</li>
+                    <li>团队协作</li>
+                    <li>共享收藏夹</li>
+                    <li>API 访问</li>
+                    <li>专属支持</li>
+                </ul>
+                <a href="#" class="btn btn-outline" style="border-color: white; color: white; margin-top: 1rem;">联系我们</a>
+            </div>
+        </div>
+    </section>
+    
+    <section class="testimonials" id="testimonials">
+        <div class="section-header">
+            <h2>用户评价</h2>
+            <p>听听创业者们怎么说</p>
+        </div>
+        <div class="testimonials-grid">
+            <div class="testimonial-card">
+                <p class="testimonial-content">"Pathfinder 帮我避免了一个注定失败的项目。通过风险评估，我发现类似的产品已经有 5 家失败了。感谢 Pathfinder！"</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">张</div>
+                    <div>
+                        <div class="author-name">张明</div>
+                        <div class="author-title">全栈开发者 · 副业创业者</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <p class="testimonial-content">"作为创业教育者，Pathfinder 的案例库是我的宝藏。1100+ 失败案例，让我的课程内容更加丰富和实用。"</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">王</div>
+                    <div>
+                        <div class="author-name">王芳</div>
+                        <div class="author-title">创业导师 · 教育者</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <p class="testimonial-content">"Loot Drop 的风险评估救了我的公司。现在用 Pathfinder 的联合分析，决策更加科学，团队信心更足。"</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">李</div>
+                    <div>
+                        <div class="author-name">李华</div>
+                        <div class="author-title">连续创业者 · 产品经理</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="cta">
+        <h2>准备好开始你的创业之旅了吗？</h2>
+        <p>加入 50,000+ 创业者，用数据驱动决策，提高成功率</p>
+        <a href="#" class="btn">免费开始 →</a>
+    </section>
+    
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a href="#" class="logo">
+                    <div class="logo-icon">🧭</div>
+                    Pathfinder
+                </a>
+                <p style="margin-top: 1rem;">帮助创业者找到值得做的方向，避免注定失败的错误。从失败中学习，在机会中成功。</p>
+            </div>
+            <div class="footer-column">
+                <h4>产品</h4>
+                <ul>
+                    <li><a href="#">功能特性</a></li>
+                    <li><a href="#">定价方案</a></li>
+                    <li><a href="#">API 文档</a></li>
+                    <li><a href="#">更新日志</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>资源</h4>
+                <ul>
+                    <li><a href="#">帮助中心</a></li>
+                    <li><a href="#">博客文章</a></li>
+                    <li><a href="#">创业指南</a></li>
+                    <li><a href="#">案例研究</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>公司</h4>
+                <ul>
+                    <li><a href="#">关于我们</a></li>
+                    <li><a href="#">联系我们</a></li>
+                    <li><a href="#">加入我们</a></li>
+                    <li><a href="#">隐私政策</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 Pathfinder. All rights reserved. Made with ❤️ for entrepreneurs.</p>
+        </div>
+    </footer>
+    
+    <script>
+        function switchTab(tab) {
+            document.querySelectorAll('.demo-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const content = document.getElementById('demoContent');
+            
+            if (tab === 'inspiration') {
+                content.innerHTML = `
+                    <div class="insight-item">
+                        <span class="insight-tag">🔥 AI</span>
+                        <div class="insight-title">AI 个人助手定制化工具</div>
+                        <div class="insight-meta">📈 热度上升 45% | 💬 1.2k 讨论</div>
+                    </div>
+                    <div class="insight-item">
+                        <span class="insight-tag">💼 SaaS</span>
+                        <div class="insight-title">中小型企业合规管理 SaaS</div>
+                        <div class="insight-meta">📈 热度上升 32% | 💬 856 讨论</div>
+                    </div>
+                    <div class="insight-item">
+                        <span class="insight-tag">🛒 电商</span>
+                        <div class="insight-title">利基市场垂直电商平台</div>
+                        <div class="insight-meta">📈 热度稳定 | 💬 543 讨论</div>
+                    </div>
+                    <div class="insight-item">
+                        <span class="insight-tag">📱 工具</span>
+                        <div class="insight-title">开发者效率工具集合</div>
+                        <div class="insight-meta">📈 热度上升 28% | 💬 421 讨论</div>
+                    </div>
+                `;
+            } else if (tab === 'risk') {
+                content.innerHTML = `
+                    <div class="insight-item" style="border-color: #ef4444;">
+                        <span class="insight-tag" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">💀 高风险</span>
+                        <div class="insight-title">AI 写作助手 (2023)</div>
+                        <div class="insight-meta">❌ 失败原因: 市场饱和 | 🔍 相似案例: 23个</div>
+                    </div>
+                    <div class="insight-item" style="border-color: #f59e0b;">
+                        <span class="insight-tag" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">⚠️ 中风险</span>
+                        <div class="insight-title">社交电商平台 (2022)</div>
+                        <div class="insight-meta">❌ 失败原因: 获客成本高 | 🔍 相似案例: 15个</div>
+                    </div>
+                    <div class="insight-item" style="border-color: #10b981;">
+                        <span class="insight-tag" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">✅ 可参考</span>
+                        <div class="insight-title">B2B SaaS 工具 (2021)</div>
+                        <div class="insight-meta">💡 成功要素: 清晰的客户价值 | 🔗 重建机会</div>
+                    </div>
+                `;
+            } else {
+                content.innerHTML = `
+                    <div style="text-align: center; padding: 2rem;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🎯</div>
+                        <h3 style

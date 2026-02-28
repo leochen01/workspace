@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>双人贪吃蛇对战 🐍🐍</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Arial', sans-serif;
+        }
+
+        .game-container {
+            text-align: center;
+        }
+
+        h1 {
+            color: #4ecca3;
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+            text-shadow: 0 0 10px rgba(78, 204, 163, 0.5);
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            margin-bottom: 20px;
+        }
+
+        .player-score {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 30px;
+            border-radius: 15px;
+            min-width: 200px;
+        }
+
+        .player-score.p1 {
+            border: 3px solid #4ecca3;
+        }
+
+        .player-score.p2 {
+            border: 3px solid #ff6b6b;
+        }
+
+        .player-score h3 {
+            color: #fff;
+            margin-bottom: 10px;
+            font-size: 1.3rem;
+        }
+
+        .player-score.p1 h3 {
+            color: #4ecca3;
+        }
+
+        .player-score.p2 h3 {
+            color: #ff6b6b;
+        }
+
+        .player-score .score {
+            color: #fff;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .player-score.p1 .score {
+            color: #4ecca3;
+        }
+
+        .player-score.p2 .score {
+            color: #ff6b6b;
+        }
+
+        canvas {
+            border: 4px solid #4ecca3;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(78, 204, 163, 0.3);
+            background: #1a1a2e;
+        }
+
+        .controls {
+            margin-top: 20px;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+        }
+
+        .control-info {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px 25px;
+            border-radius: 10px;
+        }
+
+        .control-info h4 {
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        .control-info.p1 h4 {
+            color: #4ecca3;
+        }
+
+        .control-info.p2 h4 {
+            color: #ff6b6b;
+        }
+
+        .control-info p {
+            opacity: 0.8;
+            font-size: 0.95rem;
+        }
+
+        .buttons {
+            margin-top: 20px;
+        }
+
+        button {
+            background: #4ecca3;
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(78, 204, 163, 0.5);
+        }
+
+        button.p2-btn {
+            background: #ff6b6b;
+        }
+
+        button.p2-btn:hover {
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+        }
+
+        .winner-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .winner-display.p1-wins {
+            color: #4ecca3;
+        }
+
+        .winner-display.p2-wins {
+            color: #ff6b6b;
+        }
+
+        .winner-display.tie {
+            color: #ffd93d;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🐍 双人贪吃蛇对战 🐍</h1>
+        
+        <div class="score-board">
+            <div class="player-score p1">
+                <h3>🎮 玩家1 (绿色)</h3>
+                <div class="score" id="score1">0</div>
+            </div>
+            <div class="player-score p2">
+                <h3>🎮 玩家2 (红色)</h3>
+                <div class="score" id="score2">0</div>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
+
+        <div class="controls">
+            <div class="control-info p1">
+                <h4>玩家1控制</h4>
+                <p>W A S D 键移动</p>
+            </div>
+            <div class="control-info p2">
+                <h4>玩家2控制</h4>
+                <p>方向键 ↑ ← ↓ → 移动</p>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button onclick="startGame()">🚀 开始游戏</button>
+            <button class="p2-btn" onclick="resetGame()">🔄 重新开始</button>
+        </div>
+
+        <div class="winner-display" id="winnerDisplay"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const score1Element = document.getElementById('score1');
+        const score2Element = document.getElementById('score2');
+        const winnerDisplay = document.getElementById('winnerDisplay');
+
+        const gridSize = 20;
+        const tileCountX = canvas.width / gridSize;
+        const tileCountY = canvas.height / gridSize;
+
+        let snake1 = [];
+        let snake2 = [];
+        let food = {};
+        let direction1 = { x: 1, y: 0 };
+        let direction2 = { x: -1, y: 0 };
+        let nextDirection1 = { x: 1, y: 0 };
+        let nextDirection2 = { x: -1, y: 0 };
+        let score1 = 0;
+        let score2 = 0;
+        let gameLoop = null;
+        let gameSpeed = 120;
+
+        function initGame() {
+            // 玩家1从左边开始
+            snake1 = [
+                { x: 5, y: Math.floor(tileCountY / 2) },
+                { x: 4, y: Math.floor(tileCountY / 2) },
+                { x: 3, y: Math.floor(tileCountY / 2) }
+            ];
+            direction1 = { x: 1, y: 0 };
+            nextDirection1 = { x: 1, y: 0 };
+
+            // 玩家2从右边开始
+            snake2 = [
+                { x: tileCountX - 6, y: Math.floor(tileCountY / 2) },
+                { x: tileCountX - 5, y: Math.floor(tileCountY / 2) },
+                { x: tileCountX - 4, y: Math.floor(tileCountY / 2) }
+            ];
+            direction2 = { x: -1, y: 0 };
+            nextDirection2 = { x: -1, y: 0 };
+
+            score1 = 0;
+            score2 = 0;
+            score1Element.textContent = score1;
+            score2Element.textContent = score2;
+            winnerDisplay.textContent = '';
+            winnerDisplay.className = 'winner-display';
+            
+            placeFood();
+        }
+
+        function placeFood() {
+            food = {
+                x: Math.floor(Math.random() * tileCountX),
+                y: Math.floor(Math.random() * tileCountY)
+            };
+            
+            // 确保食物不在任何一条蛇身上
+            for (let segment of snake1) {
+                if (segment.x === food.x && segment.y === food.y) {
+                    placeFood();
+                    return;
+                }
+            }
+            for (let segment of snake2) {
+                if (segment.x === food.x && segment.y === food.y) {
+                    placeFood();
+                    return;
+                }
+            }
+        }
+
+        function update() {
+            direction1 = { ...nextDirection1 };
+            direction2 = { ...nextDirection2 };
+
+            // 计算两个头的位置
+            const head1 = {
+                x: snake1[0].x + direction1.x,
+                y: snake1[0].y + direction1.y
+            };
+
+            const head2 = {
+                x: snake2[0].x + direction2.x,
+                y: snake2[0].y + direction2.y
+            };
+
+            let gameOver1 = false;
+            let gameOver2 = false;
+            let winner = null;
+
+            // 检查撞墙
+            if (head1.x < 0 || head1.x >= tileCountX || head1.y < 0 || head1.y >= tileCountY) {
+                gameOver1 = true;
+            }
+            if (head2.x < 0 || head2.x >= tileCountX || head2.y < 0 || head2.y >= tileCountY) {
+                gameOver2 = true;
+            }
+
+            // 检查撞到自己
+            for (let segment of snake1) {
+                if (head1.x === segment.x && head1.y === segment.y) {
+                    gameOver1 = true;
+                    break;
+                }
+            }
+            for (let segment of snake2) {
+                if (head2.x === segment.x && head2.y === segment.y) {
+                    gameOver2 = true;
+                    break;
+                }
+            }
+
+            // 检查两条蛇相撞
+            for (let segment of snake1) {
+                if (head1.x === segment.x && head1.y === segment.y) {
+                    gameOver1 = true;
+                    break;
+                }
+            }
+            for (let segment of snake2) {
+                if (head2.x === segment.x && head2.y === segment.y) {
+                    gameOver2 = true;
+                    break;
+                }
+            }
+
+            // 检查两条蛇头相撞
+            if (head1.x === head2.x && head1.y === head2.y) {
+                gameOver1 = true;
+                gameOver2 = true;
+            }
+
+            // 检查一条蛇是否撞到另一条蛇的身体
+            for (let segment of snake1) {
+                if (head2.x === segment.x && head2.y === segment.y) {
+                    gameOver2 = true;
+                    break;
+                }
+            }
+            for (let segment of snake2) {
+                if (head1.x === segment.x && head1.y === segment.y) {
+                    gameOver1 = true;
+                    break;
+                }
+            }
+
+            if (gameOver1 && gameOver2) {
+                endGame('tie');
+                return;
+            } else if (gameOver1) {
+                endGame('p2');
+                return;
+            } else if (gameOver2) {
+                endGame('p1');
+                return;
+            }
+
+            // 移动蛇1
+            snake1.unshift(head1);
+            if (head1.x === food.x && head1.y === food.y) {
+                score1 += 10;
+                score1Element.textContent = score1;
+                placeFood();
+            } else {
+                snake1.pop();
+            }
+
+            // 移动蛇2
+            snake2.unshift(head2);
+            if (head2.x === food.x && head2.y === food.y) {
+                score2 += 10;
+                score2Element.textContent = score2;
+                placeFood();
+            } else {
+                snake2.pop();
+            }
+
+            draw();
+        }
+
+        function endGame(winner) {
+            clearInterval(gameLoop);
+            gameLoop = null;
+
+            let message = '';
+            let className = 'winner-display';
+
+            if (winner === 'p1') {
+                message = '🎉 玩家1 获胜！';
+                className += ' p1-wins';
+            } else if (winner === 'p2') {
+                message = '🎉 玩家2 获胜！';
+                className += ' p2-wins';
+            } else {
+                message = '🤝 平局！';
+                className += ' tie';
+            }
+
+            winnerDisplay.textContent = message;
+            winnerDisplay.className = className;
+
+            // 绘制游戏结束画面
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = winner === 'p1' ? '#4ecca3' : (winner === 'p2' ? '#ff6b6b' : '#ffd93d');
+            ctx.font = 'bold 40px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = '24px Arial';
+            ctx.fillText(`最终比分 - 玩家1: ${score1}  vs  玩家2: ${score2}`, canvas.width / 2, canvas.height / 2 + 40);
+        }
+
+        function draw() {
+            // 清空画布
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制网格
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            for (let i = 0; i <= tileCountX; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * gridSize, 0);
+                ctx.lineTo(i * gridSize, canvas.height);
+                ctx.stroke();
+            }
+            for (let i = 0; i <= tileCountY; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, i * gridSize);
+                ctx.lineTo(canvas.width, i * gridSize);
+                ctx.stroke();
+            }
+
+            // 绘制食物
+            ctx.fillStyle = '#ffd93d';
+            ctx.beginPath();
+            ctx.arc(
+                food.x * gridSize + gridSize / 2,
+                food.y * gridSize + gridSize / 2,
+                gridSize / 2 - 2,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
+
+            // 食物闪光效果
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(
+                food.x * gridSize + gridSize / 2 - 3,
+                food.y * gridSize + gridSize / 2 - 3,
+                3,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
+
+            // 绘制蛇1 (绿色)
+            for (let i = 0; i < snake1.length; i++) {
+                const segment = snake1[i];
+                const isHead = i === 0;
+                
+                const greenValue = 200 - (i * 5);
+                const blueValue = 150 + (i * 3);
+                ctx.fillStyle = isHead ? '#4ecca3' : `rgb(30, ${greenValue}, ${blueValue})`;
+
+                const padding = 1;
+                const x = segment.x * gridSize + padding;
+                const y = segment.y * gridSize + padding;
+                const width = gridSize - padding * 2;
+                const height = gridSize - padding * 2;
+
+                ctx.beginPath();
+                ctx.roundRect(x, y, width, height, 5);
+                ctx.fill();
+
+                if (isHead) {
+                    drawSnakeEyes(x, y, width, height, direction1, '#fff');
+                }
+            }
+
+            // 绘制蛇2 (红色)
+            for (let i = 0; i < snake2.length; i++) {
+                const segment = snake2[i];
+                const isHead = i === 0;
+                
+                const redValue = 200 - (i * 5);
+                const blueValue = 100 + (i * 3);
+                ctx.fillStyle = isHead ? '#ff6b6b' : `rgb(${redValue}, 50, ${blueValue})`;
+
+                const padding = 1;
+                const x = segment.x * gridSize + padding;
+                const y = segment.y * gridSize + padding;
+                const width = gridSize - padding * 2;
+                const height = gridSize - padding * 2;
+
+                ctx.beginPath();
+                ctx.roundRect(x, y, width, height, 5);
+                ctx.fill();
+
+                if (isHead) {
+                    drawSnakeEyes(x, y, width, height, direction2, '#fff');
+                }
+            }
+        }
+
+        function drawSnakeEyes(x, y, width, height, direction, color) {
+            ctx.fillStyle = color;
+            const eyeSize = 3;
+            const eyeOffset = 5;
+
+            if (direction.x === 1) {
+                ctx.beginPath();
+                ctx.arc(x + width - eyeOffset, y + eyeOffset, eyeSize, 0, Math.PI * 2);
+                ctx.arc(x + width - eyeOffset, y + height - eyeOffset, eyeSize, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (direction.x === -1) {
+                ctx.beginPath();
+                ctx.arc(x + eyeOffset, y + eyeOffset, eyeSize, 0, Math.PI * 2);
+                ctx.arc(x + eyeOffset, y + height - eyeOffset, eyeSize, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (direction.y === -1) {
+                ctx.beginPath();
+                ctx.arc(x + eyeOffset, y + eyeOffset, eyeSize, 0, Math.PI * 2);
+                ctx.arc(x + width - eyeOffset, y + eyeOffset, eyeSize, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                ctx.beginPath();
+                ctx.arc(x + eyeOffset, y + height - eyeOffset, eyeSize, 0, Math.PI * 2);
+                ctx.arc(x + width - eyeOffset, y + height - eyeOffset, eyeSize, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function startGame() {
+            if (gameLoop) {
+                clearInterval(gameLoop);
+            }
+            initGame();
+            gameLoop = setInterval(update, gameSpeed);
+        }
+
+        function resetGame() {
+            if (gameLoop) {
+                clearInterval(gameLoop);
+                gameLoop = null;
+            }
+            initGame();
+            draw();
+        }
+
+        document.addEventListener('keydown', function(e) {
+            // 玩家1: WASD
+            switch(e.key.toLowerCase()) {
+                case 'w':
+                    if (direction1.y !== 1) {
+                        nextDirection1 = { x: 0, y: -1 };
+                    }
+                    e.preventDefault();
+                    break;
+                case 's':
+                    if (direction1.y !== -1) {
+                        nextDirection1 = { x: 0, y: 1 };
+                    }
+                    e.preventDefault();
+                    break;
+                case 'a':
+                    if (direction1.x !== 1) {
+                        nextDirection1 = { x: -1, y: 0 };
+                    }
+                    e.preventDefault();
+                    break;
+                case 'd':
+                    if (direction1.x !== -1) {
+                        nextDirection1 = { x: 1, y: 0 };
+                    }
+                    e.preventDefault();
+                    break;
+            }
+
+            // 玩家2: 方向键
+            switch(e.key) {
+                case 'ArrowUp':
+                    if (direction2.y !== 1) {
+                        nextDirection2 = { x: 0, y: -1 };
+                    }
+                    e.preventDefault();
+                    break;
+                case 'ArrowDown':
+                    if (direction2.y !== -1) {
+                        nextDirection2 = { x: 0, y: 1 };
+                    }
+                    e.preventDefault();
+                    break;
+                case 'ArrowLeft':
+                    if (direction2.x !== 1) {
+                        nextDirection2 = { x: -1, y: 0 };
+                    }
+                    e.preventDefault();
+                    break;
+                case 'ArrowRight':
+                    if (direction2.x !== -1) {
+                        nextDirection2 = { x: 1, y: 0 };
+                    }
+                    e.preventDefault();
+                    break;
+            }
+        });
+
+        // 初始化显示
+        initGame();
+        draw();
+    </script>
+</body>
+</html>

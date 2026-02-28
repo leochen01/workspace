@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QQ说说回忆馆</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --text-primary: #f0f0f5;
+            --text-secondary: #8888a0;
+            --accent-gold: #d4af37;
+            --accent-rose: #c94b7c;
+            --accent-cyan: #4ecdc4;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Noto Serif SC', serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* 动态背景 */
+        .bg-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .bg-canvas canvas { width: 100%; height: 100%; }
+
+        /* 启动页 */
+        .intro-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 1.5s ease, transform 1.5s ease;
+        }
+        .intro-screen.hidden {
+            opacity: 0;
+            transform: scale(1.1);
+            pointer-events: none;
+        }
+
+        .intro-bg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 80%, rgba(212, 175, 55, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(201, 75, 124, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(78, 205, 196, 0.05) 0%, transparent 70%);
+            animation: bgPulse 8s ease-in-out infinite;
+        }
+        @keyframes bgPulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        .intro-content { text-align: center; z-index: 1; }
+
+        .intro-title {
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-rose) 50%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+        @keyframes titleGlow {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.2); }
+        }
+
+        .intro-subtitle {
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            font-family: 'ZCOOL XiaoWei', serif;
+            letter-spacing: 0.3em;
+        }
+
+        .intro-stats {
+            display: flex;
+            gap: 3rem;
+            margin-bottom: 3rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .stat-item { text-align: center; }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            display: block;
+        }
+        .stat-label { font-size: 0.9rem; color: var(--text-secondary); }
+
+        .enter-btn {
+            padding: 1rem 3rem;
+            font-size: 1.2rem;
+            font-family: 'Noto Serif SC', serif;
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-rose));
+            border: none;
+            color: white;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            animation: btnPulse 2s ease-in-out infinite;
+        }
+        @keyframes btnPulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.4); }
+            50% { box-shadow: 0 0 40px rgba(212,55, 0.8); }
+ 175,         }
+        .enter-btn:hover { transform: scale(1.05); }
+
+        /* 导航 */
+        .nav {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            background: linear-gradient(180deg, rgba(10,10,15,0.9) 0%, transparent 100%);
+            opacity: 0;
+            transform: translateY(-100%);
+            transition: all 0.5s ease;
+        }
+        .nav.visible { opacity: 1; transform: translateY(0); }
+        .nav-logo { font-size: 1.2rem; color: var(--accent-gold); }
+        .nav-links { display: flex; gap: 2rem; }
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s;
+            cursor: pointer;
+        }
+        .nav-links a:hover { color: var(--accent-gold); }
+
+        /* 时间隧道 */
+        .timeline-section {
+            padding: 100px 2rem 2rem;
+            min-height: 100vh;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .timeline {
+            position: relative;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--accent-gold), var(--accent-rose), var(--accent-cyan));
+        }
+
+        .timeline-year {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4rem;
+            position: relative;
+        }
+
+        .timeline-year:nth-child(odd) { flex-direction: row; }
+        .timeline-year:nth-child(even) { flex-direction: row-reverse; }
+
+        .year-card {
+            width: calc(50% - 40px);
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .year-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(201, 75, 124, 0.1));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .year-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--accent-gold);
+            box-shadow: 0 20px 60px rgba(212, 175, 55, 0.2);
+        }
+
+        .year-card:hover::before { opacity: 1; }
+
+        .year-marker {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 60px;
+            background: var(--bg-primary);
+            border: 3px solid var(--accent-gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            z-index: 1;
+            transition: all 0.3s;
+        }
+
+        .timeline-year:hover .year-marker {
+            background: var(--accent-gold);
+            color: var(--bg-primary);
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.5);
+        }
+
+        .year-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .year-title { font-size: 1.8rem; color: var(--accent-gold); }
+
+        .year-count {
+            background: var(--accent-rose);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+
+        .year-preview {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* 统计页 */
+        .stats-section {
+            padding: 100px 2rem;
+            min-height: 100vh;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .stat-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--accent-gold);
+        }
+
+        .stat-card-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .stat-card-value {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            display: block;
+        }
+        .stat-card-label { color: var(--text-secondary); margin-top: 0.5rem; }
+
+        /* 页脚 */
+        footer {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--glass-border);
+        }
+
+        /* 加载动画 */
+        .loader {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: var(--bg-primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            transition: opacity 0.5s;
+        }
+        .loader.hidden { opacity: 0; pointer-events: none; }
+
+        .loader-ring {
+            width: 60px;
+            height: 60px;
+            border: 3px solid var(--glass-border);
+            border-top-color: var(--accent-gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-gold); border-radius: 4px; }
+
+        /* 淡入动画 */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease;
+        }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .timeline::before { left: 30px; }
+            .timeline-year {
+                flex-direction: column !important;
+                padding-left: 80px;
+            }
+            .year-card { width: 100%; }
+            .year-marker { left: 30px; transform: translateX(-50%); }
+            .intro-stats { flex-direction: column; gap: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载动画 -->
+    <div class="loader" id="loader">
+        <div class="loader-ring"></div>
+    </div>
+
+    <!-- 动态背景 -->
+    <div class="bg-canvas">
+        <canvas id="stars"></canvas>
+    </div>
+
+    <!-- 启动页 -->
+    <div class="intro-screen" id="intro">
+        <div class="intro-bg"></div>
+        <div class="intro-content">
+            <h1 class="intro-title">回忆的力量</h1>
+            <p class="intro-subtitle" id="introPeriod">2012 - 2024</p>
+            <div class="intro-stats">
+                <div class="stat-item">
+                    <span class="stat-number" id="totalMoments">0</span>
+                    <span class="stat-label">条说说</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="totalPhotos">0</span>
+                    <span class="stat-label">张照片</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="totalYears">0</span>
+                    <span class="stat-label">年时光</span>
+                </div>
+            </div>
+            <button class="enter-btn" onclick="enterApp()">进入回忆</button>
+        </div>
+    </div>
+
+    <!-- 导航 -->
+    <nav class="nav" id="nav">
+        <div class="nav-logo">QQ说说回忆馆</div>
+        <div class="nav-links">
+            <a onclick="scrollToSection('timeline')">时间隧道</a>
+            <a onclick="scrollToSection('stats')">数据统计</a>
+        </div>
+    </nav>
+
+    <!-- 时间隧道 -->
+    <section class="timeline-section" id="timeline">
+        <h2 class="section-title fade-in">时间隧道</h2>
+        <div class="timeline" id="timelineContainer"></div>
+    </section>
+
+    <!-- 统计 -->
+    <section class="stats-section" id="stats">
+        <h2 class="section-title fade-in">回忆数据</h2>
+        <div class="stats-grid">
+            <div class="stat-card fade-in">
+                <div class="stat-card-icon">📝</div>
+                <span class="stat-card-value" id="statMoments">0</span>
+                <div class="stat-card-label">说说总数</div>
+            </div>
+            <div class="stat-card fade-in">
+                <div class="stat-card-icon">📷</div>
+                <span class="stat-card-value" id="statPhotos">0</span>
+                <div class="stat-card-label">照片总数</div>
+            </div>
+            <div class="stat-card fade-in">
+                <div class="stat-card-icon">💬</div>
+                <span class="stat-card-value" id="statComments">0</span>
+                <div class="stat-card-label">评论总数</div>
+            </div>
+            <div class="stat-card fade-in">
+                <div class="stat-card-icon">❤️</div>
+                <span class="stat-card-value" id="statLikes">0</span>
+                <div class="stat-card-label">点赞总数</div>
+            </div>
+            <div class="stat-card fade-in">
+                <div class="stat-card-icon">📅</div>
+                <span class="stat-card-value" id="statDays">0</span>
+                <div class="stat-card-label">陪伴天数</div>
+            </div>
+            <div class="stat-card fade-in">
+                <div class="stat-card-icon">🔥</div>
+                <span class="stat-card-value" id="statBusiestYear">-</span>
+                <div class="stat-card-label">最活跃年份</div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>QQ说说回忆馆 | 用心记住每一刻</p>
+    </footer>
+
+    <script>
+        // ==================== 数据 ====================
+        let momentsData = { user: { qq: '', nickname: '' }, moments: [] };
+
+        // 示例数据
+        const sampleData = {
+            user: { qq: '123456789', nickname: '小明' },
+            moments: [
+                { id: '1', content: '今天天气真好，和朋友们一起去爬山，站在山顶俯瞰城市的景色，感觉整个人都轻松了！', images: [], created_at: '2012-03-15 14:30:00', like_count: 25, comment_count: 8, comments: [{ content: '真羡慕，我也想去', author: '小华' }], location: '山顶公园' },
+                { id: '2', content: '人生第一份工作正式入职！加油！新的开始，新的挑战！', images: [], created_at: '2013-07-01 09:00:00', like_count: 56, comment_count: 15, comments: [{ content: '恭喜恭喜！', author: '老王' }], location: '' },
+                { id: '3', content: '和女朋友在一起三周年纪念日！感谢一路有你，未来我们也要一起走！', images: [], created_at: '2015-05-20 20:00:00', like_count: 188, comment_count: 42, comments: [{ content: '百年好合！', author: '小红' }], location: '浪漫餐厅' },
+                { id: '4', content: '今天拿到了驾照！历时三个月终于通过了所有考试，太开心了！', images: [], created_at: '2016-11-10 16:00:00', like_count: 78, comment_count: 20, comments: [{ content: '恭喜恭喜！', author: '教练' }], location: '考场' },
+                { id: '5', content: '第一次独自旅行，去了大理。苍山洱海，风花雪月，真的太美了！', images: [], created_at: '2018-08-05 12:00:00', like_count: 156, comment_count: 35, comments: [{ content: '求攻略！', author: '小明' }], location: '大理' },
+                { id: '6', content: '今天宝宝出生了！当听到第一声啼哭的时候，我的眼泪再也忍不住了...', images: [], created_at: '2020-02-14 08:30:00', like_count: 520, comment_count: 88, comments: [{ content: '恭喜恭喜！', author: '全家' }], location: '医院' },
+                { id: '7', content: '买房了！终于在这个城市有了自己的家，虽然很小但很温馨。', images: [], created_at: '2021-06-18 15:00:00', like_count: 298, comment_count: 56, comments: [{ content: '恭喜恭喜！', author: '朋友们' }], location: '新家' },
+                { id: '8', content: '疫情三年，感谢每一个为抗疫付出的人。愿山河无恙，人间皆安。', images: [], created_at: '2022-12-07 20:00:00', like_count: 456, comment_count: 102, comments: [], location: '' },
+                { id: '9', content: '今天带孩子去看了升国旗仪式，看着五星红旗冉冉升起，心中满是自豪！', images: [], created_at: '2023-10-01 06:00:00', like_count: 234, comment_count: 45, comments: [{ content: '爱国教育从小做起', author: '老婆' }], location: '天安门广场' },
+                { id: '10', content: '十年前的今天，我发表了第一条说说。十年间，有欢笑，有泪水，有成长。感谢每一个陪伴我的人！', images: [], created_at: '2024-03-15 00:00:00', like_count: 888, comment_count: 166, comments: [{ content: '十年了！', author: '老友' }], location: '' }
+            ]
+        };
+
+        // ==================== 初始化 ====================
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('./data/moments.json');
+                if (response.ok) {
+                    momentsData = await response.json();
+                } else {
+                    momentsData = sampleData;
+                }
+            } catch (e) {
+                momentsData = sampleData;
+            }
+
+            initStars();
+            initStats();
+
+            setTimeout(() => {
+                document.getElementById('loader').classList.add('hidden');
+            }, 1000);
+        });
+
+        // ==================== 背景星空 ====================
+        function initStars() {
+            const canvas = document.getElementById('stars');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const stars = [];
+            for (let i = 0; i < 200; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 1.5,
+                    alpha: Math.random(),
+                    speed: Math.random() * 0.02 + 0.005
+                });
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                stars.forEach(star => {
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
+                    ctx.fill();
+                    star.alpha += star.speed;
+                    if (star.alpha > 1 || star.alpha < 0.2) star.speed *= -1;
+                    star.y -= 0.3;
+                    if (star.y < 0) star.y = canvas.height;
+                });
+                requestAnimationFrame(draw);
+            }
+            draw();
+
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+        }
+
+        // ==================== 统计 ====================
+        function initStats() {
+            const moments = momentsData.moments;
+            const totalMoments = moments.length;
+            const totalPhotos = moments.reduce((sum, m) => sum + (m.images ? m.images.length : 0), 0);
+            const totalComments = moments.reduce((sum, m) => sum + (m.comment_count || 0), 0);
+            const totalLikes = moments.reduce((sum, m) => sum + (m.like_count || 0), 0);
+
+            const years = [...new Set(moments.map(m => m.created_at.substring(0, 4)))];
+            const totalYears = years.length;
+
+            const yearCounts = {};
+            moments.forEach(m => {
+                const year = m.created_at.substring(0, 4);
+                yearCounts[year] = (yearCounts[year] || 0) + 1;
+            });
+            const busiestYear = Object.entries(yearCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
+
+            let totalDays = 0;
+            if (moments.length > 0) {
+                const dates = moments.map(m => new Date(m.created_at));
+                const minDate = new Date(Math.min(...dates));
+                const maxDate = new Date(Math.max(...dates));
+                totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
+            }
+
+            // 更新启动页
+            document.getElementById('totalMoments').textContent = totalMoments;
+            document.getElementById('totalPhotos').textContent = totalPhotos;
+            document.getElementById('totalYears').textContent = totalYears;
+
+            if (moments.length > 0) {
+                const startYear = moments[moments.length - 1].created_at.substring(0, 4);
+                const endYear = moments[0].created_at.substring(0, 4);
+                document.getElementById('introPeriod').textContent = `${startYear} - ${endYear}`;
+            }
+
+            // 更新统计页
+            document.getElementById('statMoments').textContent = totalMoments;
+            document.getElementById('statPhotos').textContent = totalPhotos;
+            document.getElementById('statComments').textContent = totalComments;
+            document.getElementById('statLikes').textContent = totalLikes;
+            document.getElementById('statDays').textContent = totalDays || 0;
+            document.getElementById('statBusiestYear').textContent = busiestYear;
+
+            renderTimeline(moments);
+            addScrollAnimations();
+        }
+
+        // ==================== 时间线 ====================
+        function renderTimeline(moments) {
+            const container = document.getElementById('timelineContainer');
+            const years = {};
+            moments.forEach(m => {
+                const year = m.created_at.substring(0, 4);
+                if (!years[year]) years[year] = [];
+                years[year].push(m);
+            });
+
+            const sortedYears = Object.keys(years).sort((a, b) => b - a);
+
+            let html = '';
+            sortedYears.forEach((year, index) => {
+                const yearMoments = years[year];
+                const preview = yearMoments[0].content.substring(0, 80) + '...';
+
+                html += `
+                    <div class="timeline-year fade-in">
+                        <div class="year-card">
+                            <div class="year-header">
+                                <span class="year-title">${year}</span>
+                                <span class="year-count">${yearMoments.length}条</span>
+                            </div>
+                            <p class="year-preview">${preview}</p>
+                        </div>
+                        <div class="year-marker">${year.slice(-2)}</div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // ==================== 交互 ====================
+        function enterApp() {
+            document.getElementById('intro').classList.add('hidden');
+            document.getElementById('nav').classList.add('visible');
+        }
+
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function addScrollAnimations() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+        }
+    </script>
+</body>
+</html>

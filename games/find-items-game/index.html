@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 寻宝大冒险 - 找物品游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Arial', sans-serif;
+            padding: 15px;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            color: #ffd700;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .game-info {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 18px;
+            border-radius: 12px;
+            min-width: 130px;
+            text-align: center;
+            border: 2px solid #ffd700;
+        }
+
+        .game-info h4 {
+            color: #ffd700;
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+        }
+
+        .game-info .value {
+            color: #fff;
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+
+        .game-info .value.time-low {
+            color: #ff4444;
+        }
+
+        .game-info .value.negative {
+            color: #ff4444;
+        }
+
+        .progress-container {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 18px;
+            border-radius: 12px;
+            min-width: 180px;
+            border: 2px solid #44ff44;
+        }
+
+        .progress-container h4 {
+            color: #44ff44;
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+        }
+
+        .progress-bar {
+            background: #333;
+            height: 18px;
+            border-radius: 9px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #44ff44, #00cc00);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        canvas {
+            border: 4px solid #ffd700;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+            background: #1a1a2e;
+            cursor: crosshair;
+        }
+
+        .hint-box {
+            margin-top: 10px;
+            background: rgba(255, 215, 0, 0.1);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 215, 0, 0.5);
+            max-width: 900px;
+            text-align: center;
+        }
+
+        .hint-box h4 {
+            color: #ffd700;
+            margin-bottom: 8px;
+        }
+
+        .hint-box .hint-text {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .inventory {
+            margin-top: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: 2px solid #44aaff;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .inventory h4 {
+            color: #44aaff;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .inventory-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .inventory-item {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 6px 10px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85rem;
+            color: #fff;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .inventory-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .inventory-item.found {
+            border-color: #44ff44;
+            background: rgba(68, 255, 68, 0.1);
+            opacity: 0.5;
+        }
+
+        .inventory-item.rare {
+            border-color: #8844ff;
+        }
+
+        .inventory-item.legendary {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .controls {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 10px 22px;
+            font-size: 0.9rem;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #ffd700, #ccaa00);
+            color: #1a1a2e;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #44aaff, #0099cc);
+            color: #fff;
+        }
+
+        .reset-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(68, 170, 255, 0.6);
+        }
+
+        .hint-btn {
+            background: linear-gradient(135deg, #ff6b35, #cc5500);
+            color: #fff;
+        }
+
+        .hint-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.6);
+        }
+
+        .hint-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .level-info {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .level-btn {
+            background: linear-gradient(135deg, #8844ff, #6622cc);
+            color: #fff;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+        }
+
+        .level-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(136, 68, 255, 0.6);
+        }
+
+        .level-btn.active {
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+        }
+
+        .legend {
+            margin-top: 10px;
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+            justify-content: center;
+            color: #aaa;
+            font-size: 0.75rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #2a2a4e);
+            padding: 25px 40px;
+            border-radius: 20px;
+            border: 3px solid #ffd700;
+            text-align: center;
+            animation: modalPop 0.3s ease;
+        }
+
+        @keyframes modalPop {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-content h2 {
+            color: #ffd700;
+            font-size: 1.8rem;
+            margin-bottom: 12px;
+        }
+
+        .modal-content p {
+            color: #fff;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+
+        .modal-content .stats {
+            color: #aaa;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+        }
+
+        .combo-display {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .combo-display.show {
+            opacity: 1;
+            animation: comboAnim 0.5s ease;
+        }
+
+        @keyframes comboAnim {
+            0% { transform: translate(-50%, -50%) scale(0.5); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 寻宝大冒险 🗺️</h1>
+    
+    <div class="game-header">
+        <div class="game-info">
+            <h4>⏱️ 时间</h4>
+            <div class="value" id="gameTime">75</div>
+        </div>
+        <div class="game-info">
+            <h4>🎯 分数</h4>
+            <div class="value" id="gameScore">0</div>
+        </div>
+        <div class="game-info">
+            <h4>📦 已找到</h4>
+            <div class="value" id="itemsFound">0/6</div>
+        </div>
+        <div class="game-info">
+            <h4>❌ 错误</h4>
+            <div class="value" id="wrongClicks">0</div>
+        </div>
+        <div class="progress-container">
+            <h4>📊 关卡进度</h4>
+            <div class="progress-bar">
+                <div class="progress-fill" id="levelProgress" style="width: 0%">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas" width="900" height="520"></canvas>
+
+    <div class="hint-box">
+        <h4>💡 寻找提示</h4>
+        <p class="hint-text" id="hintText">点击"开始游戏"寻找隐藏的物品！</p>
+    </div>
+
+    <div class="inventory">
+        <h4>🎒 物品栏 (点击可标记目标)</h4>
+        <div class="inventory-items" id="inventoryItems"></div>
+    </div>
+
+    <div class="controls">
+        <button class="start-btn" onclick="startGame()">🚀 开始游戏</button>
+        <button class="hint-btn" id="hintBtn" onclick="useHint()">💡 使用提示</button>
+        <button class="reset-btn" onclick="resetGame()">🔄 重新开始</button>
+    </div>
+
+    <div class="level-info">
+        <button class="level-btn active" onclick="selectLevel(0)">🌲 森林</button>
+        <button class="level-btn" onclick="selectLevel(1)">🏜️ 沙漠</button>
+        <button class="level-btn" onclick="selectLevel(2)">❄️ 极地</button>
+        <button class="level-btn" onclick="selectLevel(3)">🌋 火山</button>
+        <button class="level-btn" onclick="selectLevel(4)">🌊 海洋</button>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item"><div class="legend-color" style="background: #44ff44"></div><span>普通 (+10)</span></div>
+        <div class="legend-item"><div class="legend-color" style="background: #8844ff"></div><span>稀有 (+30)</span></div>
+        <div class="legend-item"><div class="legend-color" style="background: #ffd700"></div><span>传说 (+100)</span></div>
+        <div class="legend-item"><div class="legend-color" style="background: #ff4444"></div><span>炸弹 (-15)</span></div>
+        <div class="legend-item"><div class="legend-color" style="background: #666666"></div><span>混淆 (-5)</span></div>
+    </div>
+
+    <div class="modal" id="gameModal">
+        <div class="modal-content">
+            <h2 id="modalTitle">🎉 关卡完成！</h2>
+            <p id="modalMessage">太厉害了！</p>
+            <div class="stats" id="modalStats"></div>
+            <button class="start-btn" onclick="closeModalAndNext()">下一关 ➡️</button>
+        </div>
+    </div>
+
+    <div class="combo-display" id="comboDisplay"></div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const LEVELS = [
+            {
+                name: '🌲 森林',
+                bg: ['#1a4a1a', '#2a5a2a', '#0f3a0f'],
+                decors: ['🌿', '🍃', '☘️', '🌱', '🌴', '🎋', '🪵', '🍂', '🌾', '🌻', '🌹', '🌷', '🪴', '🌵', '🌿', '🍀'],
+                targets: [
+                    { name: '🍄 蘑菇', type: 'normal', points: 10, emoji: '🍄', size: 20 },
+                    { name: '🦋 蝴蝶', type: 'normal', points: 10, emoji: '🦋', size: 18 },
+                    { name: '🐿️ 松鼠', type: 'normal', points: 10, emoji: '🐿️', size: 22 },
+                    { name: '💎 森林宝石', type: 'rare', points: 30, emoji: '💎', size: 18 },
+                    { name: '🌈 彩虹', type: 'rare', points: 30, emoji: '🌈', size: 26 },
+                    { name: '🦄 独角兽', type: 'legendary', points: 100, emoji: '🦄', size: 24 }
+                ],
+                hint: '森林里藏着蘑菇、松鼠，还有传说中的独角兽！注意区分背景植物！'
+            },
+            {
+                name: '🏜️ 沙漠',
+                bg: ['#c2a366', '#d4c4a0', '#a89060'],
+                decors: ['🏜️', '☀️', '🌙', '⭐', '☁️', '🦂', '🐍', '🌵', '🌿', '🪨', '🪻', '🌸', '🏜️', '🦎'],
+                targets: [
+                    { name: '🌵 仙人掌', type: 'normal', points: 10, emoji: '🌵', size: 22 },
+                    { name: '🦂 蝎子', type: 'normal', points: 10, emoji: '🦂', size: 18 },
+                    { name: '🐪 骆驼', type: 'normal', points: 10, emoji: '🐪', size: 26 },
+                    { name: '💎 沙漠之宝', type: 'rare', points: 30, emoji: '💎', size: 18 },
+                    { name: '🐫 神灯', type: 'rare', points: 30, emoji: '🐫', size: 24 },
+                    { name: '🏺 法老王冠', type: 'legendary', points: 100, emoji: '🏺', size: 24 }
+                ],
+                hint: '沙漠中有仙人掌和骆驼，寻找神秘的法老王冠！'
+            },
+            {
+                name: '❄️ 极地',
+                bg: ['#a8d8ea', '#c8e6f0', '#88c8d8'],
+                decors: ['❄️', '☃️', '🌨️', '🏔️', '🧊', '💠', '🌫️', '☁️', '⭐', '🌑', '❄️', '🧊'],
+                targets: [
+                    { name: '🐧 企鹅', type: 'normal', points: 10, emoji: '🐧', size: 22 },
+                    { name: '❄️ 雪花', type: 'normal', points: 10, emoji: '❄️', size: 16 },
+                    { name: '🐻 北极熊', type: 'normal', points: 10, emoji: '🐻', size: 26 },
+                    { name: '💎 冰晶', type: 'rare', points: 30, emoji: '💎', size: 18 },
+                    { name: '🌌 极光', type: 'rare', points: 30, emoji: '🌌', size: 28 },
+                    { name: '🎅 圣诞老人', type: 'legendary', points: 100, emoji: '🎅', size: 24 }
+                ],
+                hint: '极地世界有企鹅和北极熊，极光中藏着神秘礼物！'
+            },
+            {
+                name: '🌋 火山',
+                bg: ['#8b2500', '#a83232', '#5a1a00'],
+                decors: ['🔥', '☁️', '💨', '🌫️', '🪨', '🌑', '💥', '🔥', '🌪️', '🪵', '🌋', '💨'],
+                targets: [
+                    { name: '🔥 火焰', type: 'normal', points: 10, emoji: '🔥', size: 20 },
+                    { name: '🦎 蜥蜴', type: 'normal', points: 10, emoji: '🦎', size: 18 },
+                    { name: '☁️ 烟雾', type: 'normal', points: 10, emoji: '☁️', size: 26 },
+                    { name: '💎 岩浆宝石', type: 'rare', points: 30, emoji: '💎', size: 18 },
+                    { name: '🐉 火龙', type: 'rare', points: 30, emoji: '🐉', size: 30 },
+                    { name: '👑 炎帝之冠', type: 'legendary', points: 100, emoji: '👑', size: 24 }
+                ],
+                hint: '火山地带危机四伏，寻找传说中的炎帝之冠！'
+            },
+            {
+                name: '🌊 海洋',
+                bg: ['#006994', '#0089a7', '#004d6e'],
+                decors: ['🌊', '🫧', '🐚', '🌊', '🪸', '🐠', '🦀', '🐙', '🦈', '🪼', '🌊', '⭐', '🐡', '🦑'],
+                targets: [
+                    { name: '🐟 小鱼', type: 'normal', points: 10, emoji: '🐟', size: 16 },
+                    { name: '🐠 金鱼', type: 'normal', points: 10, emoji: '🐠', size: 18 },
+                    { name: '🦀 螃蟹', type: 'normal', points: 10, emoji: '🦀', size: 22 },
+                    { name: '💎 海蓝宝', type: 'rare', points: 30, emoji: '💎', size: 18 },
+                    { name: '🐚 贝壳', type: 'rare', points: 30, emoji: '🐚', size: 20 },
+                    { name: '👑 海王冠', type: 'legendary', points: 100, emoji: '👑', size: 24 }
+                ],
+                hint: '海洋世界有鱼群和螃蟹，寻找神秘的海王冠！'
+            }
+        ];
+
+        let currentLevel = 0;
+        let gameRunning = false;
+        let gameTime = 75;
+        let score = 0;
+        let itemsFound = 0;
+        let totalTargets = 6;
+        let wrongClicks = 0;
+        let gameInterval = null;
+        let timeInterval = null;
+        let hintsLeft = 3;
+        let hiddenItems = [];
+        let decorItems = [];
+        let floatingTexts = [];
+        let particles = [];
+        let audioCtx = null;
+        let masterGain = null;
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.25;
+            masterGain.connect(audioCtx.destination);
+        }
+
+        function playSound(freq, duration, type = 'sine') {
+            if (!audioCtx || !masterGain) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(masterGain);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playFoundSound(isRare = false, isLegendary = false) {
+            if (isLegendary) {
+                playSound(1047, 0.25);
+                setTimeout(() => playSound(1318, 0.25), 80);
+                setTimeout(() => playSound(1568, 0.3), 160);
+            } else if (isRare) {
+                playSound(659, 0.2);
+                setTimeout(() => playSound(784, 0.2), 80);
+            } else {
+                playSound(523, 0.15);
+            }
+        }
+
+        function playWrongSound() {
+            playSound(150, 0.3, 'sawtooth');
+            setTimeout(() => playSound(100, 0.2, 'sawtooth'), 100);
+        }
+
+        function playWinSound() {
+            [523, 659, 784, 1047, 784, 1047, 1318, 1568].forEach((freq, i) => {
+                setTimeout(() => playSound(freq, 0.2), i * 70);
+            });
+        }
+
+        function createParticles(x, y, color, count = 15) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x, y,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.5) * 12,
+                    life: 1,
+                    color,
+                    size: Math.random() * 5 + 2,
+                    decay: 0.02 + Math.random() * 0.02
+                });
+            }
+        }
+
+        function createFloatingText(x, y, text, color) {
+            floatingTexts.push({ x, y, text, color, life: 1, vy: -2 });
+        }
+
+        function showCombo(text) {
+            const combo = document.getElementById('comboDisplay');
+            combo.textContent = text;
+            combo.classList.add('show');
+            setTimeout(() => combo.classList.remove('show'), 800);
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.25;
+                p.life -= p.decay || 0.02;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+        }
+
+        function updateFloatingTexts() {
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                const t = floatingTexts[i];
+                t.y += t.vy;
+                t.life -= 0.02;
+                if (t.life <= 0) floatingTexts.splice(i, 1);
+            }
+        }
+
+        function drawParticles() {
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function drawFloatingTexts() {
+            floatingTexts.forEach(t => {
+                ctx.globalAlpha = t.life;
+                ctx.fillStyle = t.color;
+                ctx.font = 'bold 20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(t.text, t.x, t.y);
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function selectLevel(levelIndex) {
+            currentLevel = levelIndex;
+            document.querySelectorAll('.level-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === levelIndex);
+            });
+            resetGame();
+        }
+
+        function generateItems() {
+            hiddenItems = [];
+            decorItems = [];
+            const level = LEVELS[currentLevel];
+            
+            const shuffled = [...level.targets].sort(() => Math.random() - 0.5);
+            for (let i = 0; i < totalTargets; i++) {
+                const item = { ...shuffled[i] };
+                item.x = 70 + Math.random() * (canvas.width - 140);
+                item.y = 70 + Math.random() * (canvas.height - 140);
+                item.scale = 0;
+                item.targetScale = 0.65 + Math.random() * 0.25;
+                item.phase = Math.random() * Math.PI * 2;
+                item.isTarget = true;
+                hiddenItems.push(item);
+            }
+            
+            const decorCount = 45 + Math.floor(Math.random() * 25);
+            for (let i = 0; i < decorCount; i++) {
+                const emoji = level.decors[Math.floor(Math.random() * level.decors.length)];
+                decorItems.push({
+                    emoji,
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: 14 + Math.random() * 18,
+                    phase: Math.random() * Math.PI * 2,
+                    speed: 0.25 + Math.random() * 0.4,
+                    alpha: 0.35 + Math.random() * 0.35
+                });
+            }
+            
+            updateInventoryUI();
+        }
+
+        function updateInventoryUI() {
+            const inventoryDiv = document.getElementById('inventoryItems');
+            inventoryDiv.innerHTML = '';
+            LEVELS[currentLevel].targets.slice(0, totalTargets).forEach(item => {
+                const div = document.createElement('div');
+                div.className = `inventory-item ${item.type}`;
+                div.id = `inv-${item.name.replace(/\s/g, '')}`;
+                div.innerHTML = `<span>${item.emoji}</span><span>${item.name}</span>`;
+                div.onclick = () => highlightTarget(item.name);
+                inventoryDiv.appendChild(div);
+            });
+        }
+
+        function highlightTarget(name) {
+            hiddenItems.forEach(item => {
+                if (item.name === name) {
+                    item.scale = 1.2;
+                    item.targetScale = 1.2;
+                }
+            });
+        }
+
+        function drawBackground() {
+            const level = LEVELS[currentLevel];
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, level.bg[0]);
+            gradient.addColorStop(0.5, level.bg[1]);
+            gradient.addColorStop(1, level.bg[2]);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const time = Date.now() / 1000;
+            decorItems.forEach(item => {
+                const hover = Math.sin(time * item.speed + item.phase) * 2;
+                ctx.globalAlpha = item.alpha;
+                ctx.font = `${item.size}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.fillText(item.emoji, item.x, item.y + hover);
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function drawItems() {
+            const time = Date.now() / 1000;
+            hiddenItems.forEach(item => {
+                item.scale += (item.targetScale - item.scale) * 0.1;
+                const hover = Math.sin(time * 2 + item.phase) * 0.06;
+                const scale = item.scale + hover;
+                
+                ctx.save();
+                ctx.translate(item.x, item.y);
+                ctx.scale(scale, scale);
+                
+                if (item.type === 'legendary') {
+                    ctx.shadowColor = '#ffd700';
+                    ctx.shadowBlur = 16 + Math.sin(time * 3) * 6;
+                } else if (item.type === 'rare') {
+                    ctx.shadowColor = '#8844ff';
+                    ctx.shadowBlur = 10;
+                } else if (item.type === 'bomb') {
+                    ctx.shadowColor = '#ff4444';
+                    ctx.shadowBlur = 8;
+                } else {
+                    ctx.shadowColor = 'rgba(255,255,255,0.25)';
+                    ctx.shadowBlur = 4;
+                }
+                
+                ctx.font = `${item.size}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(item.emoji, 0, 0);
+                ctx.restore();
+            });
+        }
+
+        function draw() {
+            drawBackground();
+            drawItems();
+            drawParticles();
+            drawFloatingTexts();
+            
+            if (!gameRunning) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 30px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('点击"开始游戏"寻找隐藏的物品！', canvas.width / 2, canvas.height / 2);
+            }
+        }
+
+        function handleClick(e) {
+            if (!gameRunning) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            let hitTarget = false;
+            
+            for (let i = hiddenItems.length - 1; i >= 0; i--) {
+                const item = hiddenItems[i];
+                const dist = Math.hypot(x - item.x, y - item.y);
+                
+                if (dist < item.size * 1.1) {
+                    hitTarget = true;
+                    hiddenItems.splice(i, 1);
+                    itemsFound++;
+                    
+                    if (item.type === 'bomb') {
+                        score = Math.max(0, score + item.points);
+                        playWrongSound();
+                        createParticles(x, y, '#ff4444', 25);
+                        createFloatingText(x, y, `-${Math.abs(item.points)}`, '#ff4444');
+                        wrongClicks++;
+                        document.getElementById('wrongClicks').textContent = wrongClicks;
+                        showCombo('💥 炸弹！');
+                    } else {
+                        score += item.points;
+                        playFoundSound(item.type === 'rare', item.type === 'legendary');
+                        const color = item.type === 'legendary' ? '#ffd700' : item.type === 'rare' ? '#8844ff' : '#44ff44';
+                        createParticles(x, y, color, 20);
+                        createFloatingText(x, y, `+${item.points}`, color);
+                        if (item.type === 'legendary') showCombo('⭐ 传说！');
+                    }
+                    
+                    const invItem = document.getElementById(`inv-${item.name.replace(/\s/g, '')}`);
+                    if (invItem) invItem.classList.add('found');
+                    
+                    document.getElementById('gameScore').textContent = score;
+                    document.getElementById('itemsFound').textContent = `${itemsFound}/${totalTargets}`;
+                    
+                    const progress = (itemsFound / totalTargets) * 100;
+                    const progressFill = document.getElementById('levelProgress');
+                    progressFill.style.width = progress + '%';
+                    progressFill.textContent = Math.round(progress) + '%';
+                    
+                    if (itemsFound >= totalTargets) endGame(true);
+                    return;
+                }
+            }
+            
+            if (!hitTarget) {
+                wrongClicks++;
+                score = Math.max(0, score - 5);
+                playWrongSound();
+                createParticles(x, y, '#666666', 12);
+                createFloatingText(x, y, '-5', '#ff6666');
+                document.getElementById('wrongClicks').textContent = wrongClicks;
+                document.getElementById('gameScore').textContent = score;
+                showCombo('❌ 选错了！');
+            }
+        }
+
+        function useHint() {
+            if (!gameRunning || hintsLeft <= 0 || hiddenItems.length === 0) return;
+            
+            hintsLeft--;
+            document.getElementById('hintBtn').textContent = `💡 使用提示 (${hintsLeft})`;
+            if (hintsLeft <= 0) document.getElementById('hintBtn').disabled = true;
+            
+            hiddenItems[0].scale = 1.3;
+            document.getElementById('hintText').textContent = `提示：${hiddenItems[0].name} 就在附近！`;
+            playSound(880, 0.1);
+        }
+
+        function startGame() {
+            if (!audioCtx) initAudio();
+            if (gameRunning) return;
+            
+            gameRunning = true;
+            gameTime = 75;
+            score = 0;
+            itemsFound = 0;
+            wrongClicks = 0;
+            hintsLeft = 3;
+            particles = [];
+            floatingTexts = [];
+            
+            document.getElementById('gameTime').textContent = gameTime;
+            document.getElementById('gameScore').textContent = score;
+            document.getElementById('itemsFound').textContent = `0/${totalTargets}`;
+            document.getElementById('wrongClicks').textContent = '0';
+            document.getElementById('levelProgress').style.width = '0%';
+            document.getElementById('levelProgress').textContent = '0%';
+            document.getElementById('hintBtn').textContent = `💡 使用提示 (${hintsLeft})`;
+            document.getElementById('hintBtn').disabled = false;
+            document.getElementById('hintText').textContent = LEVELS[currentLevel].hint;
+            document.getElementById('gameTime').classList.remove('time-low');
+            
+            generateItems();
+            
+            gameInterval = setInterval(() => {
+                updateParticles();
+                updateFloatingTexts();
+                draw();
+            }, 1000 / 60);
+            
+            timeInterval = setInterval(() => {
+                gameTime--;
+                const timeEl = document.getElementById('gameTime');
+                timeEl.textContent = gameTime;
+                timeEl.classList.toggle('time-low', gameTime <= 15);
+                if (gameTime <= 0) endGame(false);
+            }, 1000);
+        }
+
+        function endGame(won) {
+            gameRunning = false;
+            clearInterval(gameInterval);
+            clearInterval(timeInterval);
+            
+            const modal = document.getElementById('gameModal');
+            const title = document.getElementById('modalTitle');
+            const message = document.getElementById('modalMessage');
+            const stats = document.getElementById('modalStats');
+            
+            if (won) {
+                playWinSound();
+                title.textContent = '🎉 关卡完成！';
+                message.textContent = '太厉害了！所有物品都找到了！';
+            } else {
+                title.textContent = '⏰ 时间到！';
+                message.textContent = '继续加油！';
+            }
+            
+            stats.innerHTML = `最终分数: <strong style="color: #ffd700; font-size: 1.2rem;">${score}</strong><br>找到物品: ${itemsFound}/${totalTargets}<br>错误次数: ${wrongClicks}<br>剩余时间: ${gameTime}秒`;
+            modal.classList.add('show');
+        }
+
+        function closeModalAndNext() {
+            document.getElementById('gameModal').classList.remove('show');
+            if (currentLevel < LEVELS.length - 1) {
+                selectLevel(currentLevel + 1);
+            } else {
+                selectLevel(0);
+            }
+        }
+
+        function resetGame() {
+            gameRunning = false;
+            clearInterval(gameInterval);
+            clearInterval(timeInterval);
+            
+            gameTime = 75;
+            score = 0;
+            itemsFound = 0;
+            wrongClicks = 0;
+            hintsLeft = 3;
+            particles = [];
+            floatingTexts = [];
+            
+            document.getElementById('gameTime').textContent = gameTime;
+            document.getElementById('gameScore').textContent = score;
+            document.getElementById('itemsFound').textContent = `0/${totalTargets}`;
+            document.getElementById('wrongClicks').textContent = '0';
+            document.getElementById('levelProgress').style.width = '0%';
+            document.getElementById('levelProgress').textContent = '0%';
+            document.getElementById('hintBtn').textContent = `💡 使用提示 (${hintsLeft})`;
+            document.getElementById('hintBtn').disabled = false;
+            document.getElementById('gameTime').classList.remove('time-low');
+            document.getElementById('hintText').textContent = LEVELS[currentLevel].hint;
+            
+            updateInventoryUI();
+            draw();
+        }
+
+        canvas.addEventListener('click', handleClick);
+        updateInventoryUI();
+        draw();
+    </script>
+</body>
+</html>
+            

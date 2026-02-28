@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧩 双人迷宫大挑战 - 谁先逃出？</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Arial', sans-serif;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            color: #ffd700;
+            margin-bottom: 15px;
+            font-size: 2rem;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .player-status {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 25px;
+            border-radius: 15px;
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .player-status.p1 {
+            border: 3px solid #00ff88;
+        }
+
+        .player-status.p2 {
+            border: 3px solid #ff6b6b;
+        }
+
+        .player-status h3 {
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .player-status.p1 h3 {
+            color: #00ff88;
+        }
+
+        .player-status.p2 h3 {
+            color: #ff6b6b;
+        }
+
+        .player-status .info {
+            color: #fff;
+            font-size: 0.95rem;
+            line-height: 1.8;
+        }
+
+        .player-status .trapped {
+            color: #ff4444;
+            font-weight: bold;
+            animation: blink 0.5s infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.5; }
+        }
+
+        canvas {
+            border: 4px solid #ffd700;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+            background: #0a0a1a;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 80px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-box {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 15px 25px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .control-box h4 {
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .control-box.p1 h4 {
+            color: #00ff88;
+        }
+
+        .control-box.p2 h4 {
+            color: #ff6b6b;
+        }
+
+        .control-box p {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 14px 35px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            color: #1a1a2e;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: #fff;
+        }
+
+        .reset-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(0, 212, 255, 0.6);
+        }
+
+        .legend {
+            margin-top: 20px;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .winner-display {
+            margin-top: 20px;
+            font-size: 2rem;
+            font-weight: bold;
+            min-height: 50px;
+        }
+
+        .winner-display.p1-wins {
+            color: #00ff88;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.7);
+        }
+
+        .winner-display.p2-wins {
+            color: #ff6b6b;
+            text-shadow: 0 0 20px rgba(255, 107, 107, 0.7);
+        }
+
+        .goal-info {
+            color: #888;
+            margin-top: 10px;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧩 双人迷宫大挑战 🏃‍♂️🏃‍♀️</h1>
+    
+    <div class="game-info">
+        <div class="player-status p1">
+            <h3>🎮 玩家1 (绿色)</h3>
+            <div class="info" id="status1">
+                <div>位置: <span id="pos1">(1, 1)</span></div>
+                <div>陷阱: <span id="trap1">0</span>次</div>
+                <div id="trappedMsg1"></div>
+            </div>
+        </div>
+        <div class="player-status p2">
+            <h3>🎮 玩家2 (红色)</h3>
+            <div class="info" id="status2">
+                <div>位置: <span id="pos2">(起点)</span></div>
+                <div>陷阱: <span id="trap2">0</span>次</div>
+                <div id="trappedMsg2"></div>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="controls">
+        <div class="control-box p1">
+            <h4>玩家1控制</h4>
+            <p>W A S D 移动</p>
+        </div>
+        <div class="control-box p2">
+            <h4>玩家2控制</h4>
+            <p>方向键 ↑ ← ↓ → 移动</p>
+        </div>
+    </div>
+
+    <div class="buttons">
+        <button class="start-btn" onclick="startGame()">🚀 开始挑战</button>
+        <button class="reset-btn" onclick="resetGame()">🔄 重新生成迷宫</button>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background: #00ff88"></div>
+            <span>玩家1</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #ff6b6b"></div>
+            <span>玩家2</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #ffd700"></div>
+            <span>出口 (终点)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #ff4444"></div>
+            <span>陷阱 (减速3秒)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #44aaff"></div>
+            <span>传送门</span>
+        </div>
+    </div>
+
+    <div class="winner-display" id="winnerDisplay"></div>
+    <p class="goal-info">🎯 目标: 看谁先到达金色出口！</p>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 设置画布大小
+        const CELL_SIZE = 30;
+        const COLS = 25;
+        const ROWS = 18;
+        canvas.width = COLS * CELL_SIZE;
+        canvas.height = ROWS * CELL_SIZE;
+
+        // 游戏状态
+        let maze = [];
+        let gameRunning = false;
+        let gameLoop = null;
+        
+        // 音频
+        let audioCtx = null;
+        let masterGain = null;
+
+        // 陷阱和减速
+        const TRAP_DURATION = 3000;
+        const keys = {};
+
+        // 粒子效果
+        const particles = [];
+
+        // 玩家1
+        const player1 = {
+            x: 1,
+            y: 1,
+            color: '#00ff88',
+            trapped: false,
+            trapEndTime: 0,
+            trapCount: 0,
+            startTime: 0
+        };
+
+        // 玩家2
+        const player2 = {
+            x: 1,
+            y: 2,
+            color: '#ff6b6b',
+            trapped: false,
+            trapEndTime: 0,
+            trapCount: 0,
+            startTime: 0
+        };
+
+        // 出口位置
+        let exitPos = { x: COLS - 2, y: ROWS - 2 };
+
+        // 初始化音频
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.3;
+            masterGain.connect(audioCtx.destination);
+        }
+
+        // 播放移动音效
+        function playMoveSound(isPlayer1) {
+            if (!audioCtx || !masterGain) return;
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const panner = audioCtx.createStereoPanner();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(isPlayer1 ? 440 : 392, audioCtx.currentTime);
+            
+            const panPos = isPlayer1 
+                ? (player1.x / COLS) * 2 - 1 
+                : (player2.x / COLS) * 2 - 1;
+            panner.pan.value = Math.max(-1, Math.min(1, panPos));
+            
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            
+            osc.connect(gain);
+            gain.connect(panner);
+            panner.connect(masterGain);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        // 播放陷阱音效
+        function playTrapSound(isPlayer1) {
+            if (!audioCtx || !masterGain) return;
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.5);
+            
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            
+            osc.connect(gain);
+            gain.connect(masterGain);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        // 播放传送音效
+        function playTeleportSound() {
+            if (!audioCtx || !masterGain) return;
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.3);
+            
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            
+            osc.connect(gain);
+            gain.connect(masterGain);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        // 播放胜利音效
+        function playWinSound(isPlayer1) {
+            if (!audioCtx || !masterGain) return;
+            
+            const notes = isPlayer1 
+                ? [523, 659, 784, 1047]  // C5, E5, G5, C6
+                : [392, 494, 587, 784]; // G4, B4, D5, G5
+            
+            notes.forEach((freq, i) => {
+                setTimeout(() => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                    
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    
+                    osc.connect(gain);
+                    gain.connect(masterGain);
+                    
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
+                }, i * 150);
+            });
+        }
+
+        // 创建粒子效果
+        function createParticles(x, y, color, count = 10) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x * CELL_SIZE + CELL_SIZE / 2,
+                    y: y * CELL_SIZE + CELL_SIZE / 2,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 1,
+                    color: color,
+                    size: Math.random() * 4 + 2
+                });
+            }
+        }
+
+        // 生成迷宫 (使用深度优先搜索算法)
+        function generateMaze() {
+            // 初始化迷宫 (1 = 墙, 0 = 路)
+            maze = [];
+            for (let y = 0; y < ROWS; y++) {
+                maze[y] = [];
+                for (let x = 0; x < COLS; x++) {
+                    maze[y][x] = 1;
+                }
+            }
+
+            // DFS 生成迷宫
+            function carve(x, y) {
+                maze[y][x] = 0;
+                
+                const directions = [
+                    [0, -2], [0, 2], [-2, 0], [2, 0]
+                ].sort(() => Math.random() - 0.5);
+                
+                for (const [dx, dy] of directions) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    
+                    if (nx > 0 && nx < COLS - 1 && ny > 0 && ny < ROWS - 1 && maze[ny][nx] === 1) {
+                        maze[y + dy / 2][x + dx / 2] = 0;
+                        carve(nx, ny);
+                    }
+                }
+            }
+
+            carve(1, 1);
+
+            // 确保起点和终点是通路
+            maze[1][1] = 0;
+            maze[1][2] = 0;
+            maze[ROWS - 2][COLS - 2] = 0;
+            maze[ROWS - 2][COLS - 3] = 0;
+            maze[ROWS - 3][COLS - 2] = 0;
+            
+            exitPos = { x: COLS - 2, y: ROWS - 2 };
+
+            // 添加陷阱和传送门
+            const traps = [];
+            const portals = [];
+            
+            for (let y = 1; y < ROWS - 1; y++) {
+                for (let x = 1; x < COLS - 1; x++) {
+                    if (maze[y][x] === 0 && 
+                        !(x === 1 && y === 1) && 
+                        !(x === 1 && y === 2) &&
+                        !(x === exitPos.x && y === exitPos.y)) {
+                        
+                        const rand = Math.random();
+                        if (rand < 0.08) {
+                            traps.push({ x, y });
+                            maze[y][x] = 2; // 2 = 陷阱
+                        } else if (rand < 0.10) {
+                            portals.push({ x, y });
+                            maze[y][x] = 3; // 3 = 传送门
+                        }
+                    }
+                }
+            }
+
+            return { traps, portals };
+        }
+
+        // 绘制迷宫
+        function drawMaze() {
+            ctx.fillStyle = '#0a0a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    const px = x * CELL_SIZE;
+                    const py = y * CELL_SIZE;
+                    
+                    if (maze[y][x] === 1) {
+                        // 墙壁
+                        ctx.fillStyle = '#2a2a4a';
+                        ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
+                        ctx.fillStyle = '#3a3a5a';
+                        ctx.fillRect(px + 2, py + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+                    } else if (maze[y][x] === 2) {
+                        // 陷阱
+                        ctx.fillStyle = '#330000';
+                        ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
+                        ctx.fillStyle = '#ff4444';
+                        ctx.beginPath();
+                        ctx.arc(px + CELL_SIZE / 2, py + CELL_SIZE / 2, CELL_SIZE / 3, 0, Math.PI * 2);
+                        ctx.fill();
+                        // 警告标志
+                        ctx.fillStyle = '#fff';
+                        ctx.font = 'bold 16px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('!', px + CELL_SIZE / 2, py + CELL_SIZE / 2 + 5);
+                    } else if (maze[y][x] === 3) {
+                        // 传送门
+                        const time = Date.now() / 500;
+                        const gradient = ctx.createRadialGradient(
+                            px + CELL_SIZE / 2, py + CELL_SIZE / 2, 0,
+                            px + CELL_SIZE / 2, py + CELL_SIZE / 2, CELL_SIZE / 2
+                        );
+                        gradient.addColorStop(0, '#ffffff');
+                        gradient.addColorStop(0.3, '#44aaff');
+                        gradient.addColorStop(1, 'rgba(68, 170, 255, 0)');
+                        ctx.fillStyle = gradient;
+                        ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
+                    } else {
+                        // 通路
+                        ctx.fillStyle = '#1a1a3a';
+                        ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
+                    }
+                }
+            }
+
+            // 绘制出口
+            const exitPx = exitPos.x * CELL_SIZE;
+            const exitPy = exitPos.y * CELL_SIZE;
+            const time = Date.now() / 300;
+            const glow = Math.sin(time) * 0.3 + 0.7;
+            
+            ctx.fillStyle = `rgba(255, 215, 0, ${glow})`;
+            ctx.fillRect(exitPx, exitPy, CELL_SIZE, CELL_SIZE);
+            ctx.fillStyle = '#ffd700';
+            ctx.fillRect(exitPx + 5, exitPy + 5, CELL_SIZE - 10, CELL_SIZE - 10);
+            
+            ctx.fillStyle = '#1a1a2e';
+            ctx.font = 'bold 18px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('★', exitPx + CELL_SIZE / 2, exitPy + CELL_SIZE / 2 + 6);
+        }
+
+        // 绘制玩家
+        function drawPlayer(player, isPlayer1) {
+            if (player.trapped) {
+                // 被困住时显示闪烁效果
+                const time = Date.now() / 200;
+                if (Math.floor(time) % 2 === 0) return;
+            }
+
+            const px = player.x * CELL_SIZE;
+            const py = player.y * CELL_SIZE;
+            
+            // 发光效果
+            ctx.shadowColor = player.color;
+            ctx.shadowBlur = 15;
+            
+            ctx.fillStyle = player.color;
+            ctx.beginPath();
+            ctx.arc(px + CELL_SIZE / 2, py + CELL_SIZE / 2, CELL_SIZE / 2 - 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.shadowBlur = 0;
+            
+            // 玩家编号
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(isPlayer1 ? '1' : '2', px + CELL_SIZE / 2, py + CELL_SIZE / 2 + 5);
+        }
+
+        // 更新粒子
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.03;
+                p.vx *= 0.95;
+                p.vy *= 0.95;
+                
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        // 绘制粒子
+        function drawParticles() {
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        // 移动玩家
+        function movePlayer(player, dx, dy, isPlayer1) {
+            if (!gameRunning) return;
+            if (player.trapped && Date.now() < player.trapEndTime) return;
+
+            const newX = player.x + dx;
+            const newY = player.y + dy;
+
+            // 检查边界
+            if (newX < 0 || newX >= COLS || newY < 0 || newY >= ROWS) return;
+            
+            // 检查墙壁
+            if (maze[newY][newX] === 1) return;
+
+            // 更新位置
+            player.x = newX;
+            player.y = newY;
+            playMoveSound(isPlayer1);
+            createParticles(newX, newY, player.color, 3);
+
+            // 检查陷阱
+            if (maze[newY][newX] === 2) {
+                player.trapped = true;
+                player.trapEndTime = Date.now() + TRAP_DURATION;
+                player.trapCount++;
+                playTrapSound(isPlayer1);
+                createParticles(newX, newY, '#ff4444', 20);
+                
+                // 更新UI
+                document.getElementById(`trap${isPlayer1 ? '1' : '2'}`).textContent = player.trapCount;
+                const msgEl = document.getElementById(`trappedMsg${isPlayer1 ? '1' : '2'}`);
+                msgEl.innerHTML = '<span class="trapped">被困住了！</span>';
+                
+                setTimeout(() => {
+                    player.trapped = false;
+                    msgEl.innerHTML = '';
+                }, TRAP_DURATION);
+            }
+
+            // 检查传送门
+            if (maze[newY][newX] === 3) {
+                // 随机传送到另一个传送门
+                let portals = [];
+                for (let y = 0; y < ROWS; y++) {
+                    for (let x = 0; x < COLS; x++) {
+                        if (maze[y][x] === 3 && (x !== newX || y !== newY)) {
+                            portals.push({ x, y });
+                        }
+                    }
+                }
+                
+                if (portals.length > 0) {
+                    const target = portals[Math.floor(Math.random() * portals.length)];
+                    player.x = target.x;
+                    player.y = target.y;
+                    playTeleportSound();
+                    createParticles(target.x, target.y, '#44aaff', 15);
+                }
+            }
+
+            // 检查是否到达出口
+            if (player.x === exitPos.x && player.y === exitPos.y) {
+                endGame(isPlayer1 ? 'p1' : 'p2');
+                return;
+            }
+
+            // 更新位置显示
+            document.getElementById(`pos${isPlayer1 ? '1' : '2'}`).textContent = 
+                `(${player.x}, ${player.y})`;
+        }
+
+        // 结束游戏
+        function endGame(winner) {
+            gameRunning = false;
+            if (gameLoop) clearInterval(gameLoop);
+            
+            playWinSound(winner === 'p1');
+            
+            const winnerDisplay = document.getElementById('winnerDisplay');
+            if (winner === 'p1') {
+                winnerDisplay.textContent = '🎉 玩家1 获胜！率先逃出迷宫！';
+                winnerDisplay.className = 'winner-display p1-wins';
+                createParticles(player1.x, player1.y, '#00ff88', 50);
+            } else {
+                winnerDisplay.textContent = '🎉 玩家2 获胜！率先逃出迷宫！';
+                winnerDisplay.className = 'winner-display p2-wins';
+                createParticles(player2.x, player2.y, '#ff6b6b', 50);
+            }
+
+            // 绘制最终效果
+            setTimeout(() => {
+                draw();
+                drawParticles();
+            }, 100);
+        }
+
+        // 主更新循环
+        function update() {
+            if (!gameRunning) {
+                draw();
+                drawParticles();
+                return;
+            }
+
+            draw();
+            updateParticles();
+            drawParticles();
+            drawPlayer(player1, true);
+            drawPlayer(player2, false);
+        }
+
+        function draw() {
+            drawMaze();
+            drawPlayer(player1, true);
+            drawPlayer(player2, false);
+        }
+
+        function startGame() {
+            if (!audioCtx) initAudio();
+            
+            if (gameRunning) return;
+            
+            gameRunning = true;
+            player1.startTime = Date.now();
+            player2.startTime = Date.now();
+            
+            document.getElementById('winnerDisplay').textContent = '';
+            document.getElementById('winnerDisplay').className = 'winner-display';
+            
+            if (gameLoop) clearInterval(gameLoop);
+            gameLoop = setInterval(update, 1000 / 60);
+        }
+
+        function resetGame() {
+            gameRunning = false;
+            if (gameLoop) {
+                clearInterval(gameLoop);
+                gameLoop = null;
+            }
+
+            const { traps, portals } = generateMaze();
+            console.log(`迷宫生成: ${traps.length}个陷阱, ${portals.length}个传送门`);
+
+            // 重置玩家
+            player1.x = 1;
+            player1.y = 1;
+            player1.trapped = false;
+            player1.trapCount = 0;
+
+            player2.x = 1;
+            player2.y = 2;
+            player2.trapped = false;
+            player2.trapCount = 0;
+
+            // 更新UI
+            document.getElementById('pos1').textContent = '(1, 1)';
+            document.getElementById('pos2').textContent = '(1, 2)';
+            document.getElementById('trap1').textContent = '0';
+            document.getElementById('trap2').textContent = '0';
+            document.getElementById('trappedMsg1').textContent = '';
+            document.getElementById('trappedMsg2').textContent = '';
+            document.getElementById('winnerDisplay').textContent = '';
+            document.getElementById('winnerDisplay').className = 'winner-display';
+
+            draw();
+        }
+
+        // 键盘事件
+        document.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+            
+            // 玩家1: WASD
+            switch(e.code) {
+                case 'KeyW': movePlayer(player1, 0, -1, true); break;
+                case 'KeyS': movePlayer(player1, 0, 1, true); break;
+                case 'KeyA': movePlayer(player1, -1, 0, true); break;
+                case 'KeyD': movePlayer(player1, 1, 0, true); break;
+            }
+
+            // 玩家2: 方向键
+            switch(e.code) {
+                case 'ArrowUp': movePlayer(player2, 0, -1, false); break;
+                case 'ArrowDown': movePlayer(player2, 0, 1, false); break;
+                case 'ArrowLeft': movePlayer(player2, -1, 0, false); break;
+                case 'ArrowRight': movePlayer(player2, 1, 0, false); break;
+            }
+
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+
+        // 初始化
+        resetGame();
+    </script>
+</body>
+</html>
