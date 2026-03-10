@@ -1,0 +1,163 @@
+{
+  "_comment": "多 Agent 跨境电商团队配置 - 2026-03-02",
+  "_note": "将此配置合并到 ~/.openclaw/openclaw.json 中",
+  
+  "agents": {
+    "list": [
+      {
+        "id": "lead",
+        "name": "大总管",
+        "workspace": "/Users/chenxiangli/.openclaw/workspace-lead",
+        "model": "bailian/qwen3.5-plus",
+        "skills": [
+          "tavily",
+          "web_search",
+          "web_fetch"
+        ],
+        "tools": {
+          "profile": "full"
+        }
+      },
+      {
+        "id": "voc-analyst",
+        "name": "VOC 市场分析师",
+        "workspace": "/Users/chenxiangli/.openclaw/workspace-voc",
+        "model": "bailian/glm-5",
+        "skills": [
+          "tavily",
+          "web_search",
+          "web_fetch",
+          "data-analyst"
+        ],
+        "tools": {
+          "profile": "full"
+        }
+      },
+      {
+        "id": "geo-optimizer",
+        "name": "GEO 内容优化师",
+        "workspace": "/Users/chenxiangli/.openclaw/workspace-geo",
+        "model": "bailian/glm-5",
+        "skills": [
+          "baoyu-format-markdown",
+          "baoyu-post-to-x",
+          "copywriter"
+        ],
+        "tools": {
+          "profile": "full"
+        }
+      },
+      {
+        "id": "reddit-spec",
+        "name": "Reddit 营销专家",
+        "workspace": "/Users/chenxiangli/.openclaw/workspace-reddit",
+        "model": "bailian/glm-5",
+        "skills": [
+          "tavily",
+          "web_search",
+          "web_fetch",
+          "baoyu-post-to-x"
+        ],
+        "tools": {
+          "profile": "full"
+        }
+      },
+      {
+        "id": "tiktok-director",
+        "name": "TikTok 爆款编导",
+        "workspace": "/Users/chenxiangli/.openclaw/workspace-tiktok",
+        "model": "bailian/qwen3.5-plus",
+        "skills": [
+          "nano-banana-pro",
+          "baoyu-danger-gemini-web",
+          "baoyu-image-gen",
+          "video-edit"
+        ],
+        "tools": {
+          "profile": "full"
+        }
+      }
+    ]
+  },
+  
+  "tools": {
+    "agentToAgent": {
+      "enabled": true,
+      "allow": [
+        "lead",
+        "voc-analyst",
+        "geo-optimizer",
+        "reddit-spec",
+        "tiktok-director"
+      ]
+    }
+  },
+  
+  "bindings": [
+    {
+      "agentId": "lead",
+      "match": {
+        "channel": "feishu",
+        "accountId": "lead"
+      }
+    },
+    {
+      "agentId": "voc-analyst",
+      "match": {
+        "channel": "feishu",
+        "accountId": "voc"
+      }
+    },
+    {
+      "agentId": "geo-optimizer",
+      "match": {
+        "channel": "feishu",
+        "accountId": "geo"
+      }
+    },
+    {
+      "agentId": "reddit-spec",
+      "match": {
+        "channel": "feishu",
+        "accountId": "reddit"
+      }
+    },
+    {
+      "agentId": "tiktok-director",
+      "match": {
+        "channel": "feishu",
+        "accountId": "tiktok"
+      }
+    }
+  ],
+  
+  "channels": {
+    "feishu": {
+      "enabled": true,
+      "connectionMode": "websocket",
+      "dmPolicy": "open",
+      "accounts": {
+        "lead": {
+          "appId": "cli_xxx_lead",
+          "appSecret": "xxx_lead"
+        },
+        "voc": {
+          "appId": "cli_xxx_voc",
+          "appSecret": "xxx_voc"
+        },
+        "geo": {
+          "appId": "cli_xxx_geo",
+          "appSecret": "xxx_geo"
+        },
+        "reddit": {
+          "appId": "cli_xxx_reddit",
+          "appSecret": "xxx_reddit"
+        },
+        "tiktok": {
+          "appId": "cli_xxx_tiktok",
+          "appSecret": "xxx_tiktok"
+        }
+      }
+    }
+  }
+}
